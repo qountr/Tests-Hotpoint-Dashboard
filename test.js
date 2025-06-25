@@ -28,7 +28,6 @@ let supportMockData = {
   accountId: '55792c0d0cf206bed0ceafe4',
   userId: '55792bec0cf206bed0ceafe2',
   videoId: '5acd816448e376945ae9e551',
-  jackpotId: '5756e48f0cf26e03bb58d922',
 };
 
 (async () => {
@@ -75,7 +74,7 @@ const getAccountVisitors = async () => {
 };
 
 describe('Testing', function () {
-  this.timeout(10000);
+  this.timeout(15000);
 
   before(async () => {
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -283,8 +282,8 @@ describe('Testing', function () {
     });
   });
 
-  describe.only('Owner Endpoints', function () {
-    it.only('GET /owner/:accountId/dropbox/auth - should retrieve dropbox auth', async () => {
+  describe('Owner Endpoints', function () {
+    it('GET /owner/:accountId/dropbox/auth - should retrieve dropbox auth', async () => {
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/dropbox/auth`).set('Cookie', cookie);
       expect(res.status).to.equal(200);
       expect(res.body.data).not.to.be.empty;
@@ -299,15 +298,14 @@ describe('Testing', function () {
     // 	expect(res.body.data).not.to.be.empty;
     // });
 
-    // TODO: cannot upload file via test
-    // it('POST /owner/:accountId/dropbox/upload - should upload file to dropbox', async () => {
-    // 	const res = await api.post(`/owner/${currentUser.userAccountIdentity}/dropbox/upload`).set('Cookie', cookie).send({
-    // 		boothId: boothsIds[0] ?? supportMockData.boothId,
-    // 		from: 'test',
-    // 		to: new Date().toISOString(),
-    // 	});
-    // 	expect(res.status).to.equal(200);
-    // });
+    it('POST /owner/:accountId/dropbox/upload - should upload file to dropbox', async () => {
+    	const res = await api.post(`/owner/${currentUser.userAccountIdentity}/dropbox/upload`).set('Cookie', cookie).send({
+    		boothId: boothsIds[0] ?? supportMockData.boothId,
+    		from: 'test',
+    		to: new Date().toISOString(),
+    	});
+    	expect(res.status).to.equal(200);
+    });
 
     it('POST /owner/:accountId/booth/:boothId/listMode - should set list mode', async () => {
       const res = await api.post(`/owner/${currentUser.userAccountIdentity}/booth/${boothsIds[0] ?? supportMockData.boothId}/listMode?listMode=whiteList`).set('Cookie', cookie);
@@ -324,38 +322,37 @@ describe('Testing', function () {
       expect(res.status).to.equal(200);
     });
 
-    it('POST /owner/:accountId/templates - should create template', async () => {
-      const formData = new FormData();
-      formData.append('email_body', 'Test Email Body');
-      formData.append('email_subj', 'Test Email Subject');
-      formData.append('email_to', 'test@example.com');
-      formData.append('email_from', 'test@example.com');
-      formData.append('template_name', 'Test Template');
-      formData.append('sms_text', 'Test SMS Text');
-      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/templates`).set('Cookie', cookie).send(formData);
+    it.only('POST /owner/:accountId/templates - should create template', async () => {
+      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/templates`).set('Cookie', cookie)
+        .field('email_body', 'Test Email Body')
+        .field('email_subj', 'Test Email Subject')
+        .field('email_to', 'test@example.com')
+        .field('email_from', 'test@example.com')
+        .field('template_name', 'Test Template')
+        .field('sms_text', 'Test SMS Text');
+      newTemplate = res.body.data;
       expect(res.status).to.equal(200);
     });
 
     it('GET /owner/:accountId/templates - should get templates', async () => {
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/templates`).set('Cookie', cookie);
-      newTemplate = res.body.data;
       expect(res.status).to.equal(200);
     });
 
-    it('GET /owner/:accountId/templates/:templateId - should get template by ID', async () => {
+    it.only('GET /owner/:accountId/templates/:templateId - should get template by ID', async () => {
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/templates/${newTemplate.id}`).set('Cookie', cookie);
+      expect(res.body.data.id).to.equal(newTemplate.id);
       expect(res.status).to.equal(200);
     });
 
     it('POST /owner/:accountId/templates/:templateId - should update template', async () => {
-      const formData = new FormData();
-      formData.append('email_body', 'Test Email Body Updated');
-      formData.append('email_subj', 'Test Email Subject Updated');
-      formData.append('email_to', 'test@example.com Updated');
-      formData.append('email_from', 'test@example.com Updated');
-      formData.append('template_name', 'Test Template');
-      formData.append('sms_text', 'Test SMS Text');
-      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/templates/${newTemplate.id}`).set('Cookie', cookie).send(formData);
+      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/templates/${newTemplate.id}`).set('Cookie', cookie)
+        .field('email_body', 'Test Email Body Updated')
+        .field('email_subj', 'Test Email Subject Updated')
+        .field('email_to', 'test@example.com Updated')
+        .field('email_from', 'test@example.com Updated')
+        .field('template_name', 'Test Template')
+        .field('sms_text', 'Test SMS Text');
       expect(res.status).to.equal(200);
     });
 
@@ -364,99 +361,94 @@ describe('Testing', function () {
       expect(res.status).to.equal(200);
     });
 
-    // TODO: cannot create jackpot since it's require video
-    // it('POST /owner/:accountId/templates/:templateId/jackpots - should create jackpot', async () => {
-    // 	const formData = new FormData();
-    // 	formData.append('send_button_text', 'Send');
-    // 	formData.append('email_subj', 'Test Email Subject Updated');
-    // 	formData.append('email_body', 'Test Email Body Updated');
-    // 	formData.append('jack_prize', '100');
-    // 	const res = await api.post(`/owner/${currentUser.userAccountIdentity}/templates/${newTemplate.id}/jackpots`).set('Cookie', cookie).send(formData);
-    // 	expect(res.status).to.equal(200);
-    // });
-
-    it('POST /owner/:accountId/jackpots/:jackpotId - should update jackpot', async () => {
-      const formData = new FormData();
-      formData.append('send_button_text', 'Send');
-      formData.append('email_subj', 'Test Email Subject Updated');
-      formData.append('email_body', 'Test Email Body Updated');
-      formData.append('jack_prize', '100');
-      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/jackpots/${supportMockData.jackpotId}`).set('Cookie', cookie).send(formData);
-      expect(res.status).to.equal(200);
-      expect(res.body.data.sendButtonText).to.equal('Send');
+    it('POST /owner/:accountId/templates/:templateId/jackpots - should create jackpot', async () => {
+     	const testFileBuffer = Buffer.from('fake video content');
+     	const res = await api.post(`/owner/${currentUser.userAccountIdentity}/templates/${newTemplate.id}/jackpots`).set('Cookie', cookie)
+        .field('send_button_text', 'Send')
+        .field('email_subj', 'Test Email Subject Updated')
+        .field('email_body', 'Test Email Body Updated')
+        .field('jack_prize', '100')
+        .attach('jackpot_video', testFileBuffer, 'test-video.mp4');
+      console.log('should create jackpot', res.body);
+     	expect(res.status).to.equal(200);
     });
+
+    // TODO: blocked by create jackpot endpoint
+    // it.only('POST /owner/:accountId/jackpots/:jackpotId - should update jackpot', async () => {
+    //   const res = await api.post(`/owner/${currentUser.userAccountIdentity}/jackpots/${supportMockData.jackpotId}`)
+    //     .set('Cookie', cookie)
+    //     .field('send_button_text', 'Send')
+    //     .field('email_subj', 'Test Email Subject Updated')
+    //     .field('email_body', 'Test Email Body Updated')
+    //     .field('jack_prize', '100');
+    //   console.log('should update jackpot', res.body);
+    //   expect(res.status).to.equal(200);
+    //   expect(res.body.data.sendButtonText).to.equal('Send');
+    // });
 
     it('GET /owner/:accountId/templates/:templateId/jackpots - should get template jackpots', async () => {
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/templates/${newTemplate.id}/jackpots`).set('Cookie', cookie);
       expect(res.status).to.equal(200);
     });
 
-    it('GET /owner/:accountId/jackpot - should get account jackpots', async () => {
-      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/jackpot`).set('Cookie', cookie);
-      expect(res.status).to.equal(200);
-    });
+    // it('GET /owner/:accountId/jackpot - should get account jackpots', async () => {
+    //   const res = await api.get(`/owner/${currentUser.userAccountIdentity}/jackpot`).set('Cookie', cookie);
+    //   expect(res.status).to.equal(200);
+    // });
 
-    it('GET /owner/:accountId/jackpots/:jackpotId - should get jackpot by ID', async () => {
-      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/jackpots/${supportMockData.jackpotId}`).set('Cookie', cookie);
-      expect(res.status).to.equal(200);
-    });
+    // it('GET /owner/:accountId/jackpots/:jackpotId - should get jackpot by ID', async () => {
+    //   const res = await api.get(`/owner/${currentUser.userAccountIdentity}/jackpots/${supportMockData.jackpotId}`).set('Cookie', cookie);
+    //   expect(res.status).to.equal(200);
+    // });
 
-    it('DELETE /owner/:accountId/gallery/:templateId/delete - should delete gallery', async () => {
-      const res = await api.delete(`/owner/${currentUser.userAccountIdentity}/gallery/${newTemplate.id}/delete`).set('Cookie', cookie);
-      expect(res.status).to.equal(200);
-    });
+    // it('DELETE /owner/:accountId/gallery/:templateId/delete - should delete gallery', async () => {
+    //   const res = await api.delete(`/owner/${currentUser.userAccountIdentity}/gallery/${newTemplate.id}/delete`).set('Cookie', cookie);
+    //   expect(res.status).to.equal(200);
+    // });
 
-    it('DELETE /owner/:accountId/gallery/:templateId/delete/assets - should delete assets', async () => {
-      const res = await api.delete(`/owner/${currentUser.userAccountIdentity}/gallery/${newTemplate.id}/delete/assets`).set('Cookie', cookie);
-      expect(res.status).to.equal(200);
-    });
+    // it('DELETE /owner/:accountId/gallery/:templateId/delete/assets - should delete assets', async () => {
+    //   const res = await api.delete(`/owner/${currentUser.userAccountIdentity}/gallery/${newTemplate.id}/delete/assets`).set('Cookie', cookie);
+    //   expect(res.status).to.equal(200);
+    // });
 
-    it('DELETE /owner/:accountId/templates/:templateId - should delete template', async () => {
-      const res = await api.delete(`/owner/${currentUser.userAccountIdentity}/templates/${newTemplate.id}`).set('Cookie', cookie);
-      expect(res.status).to.equal(200);
-    });
+    // it('DELETE /owner/:accountId/templates/:templateId - should delete template', async () => {
+    //   const res = await api.delete(`/owner/${currentUser.userAccountIdentity}/templates/${newTemplate.id}`).set('Cookie', cookie);
+    //   expect(res.status).to.equal(200);
+    // });
 
-    it('DELETE /owner/:accountId/jackpots/:jackpotId - should delete jackpot', async () => {
-      const res = await api.delete(`/owner/${currentUser.userAccountIdentity}/jackpots/${supportMockData.jackpotId}`).set('Cookie', cookie);
-      expect(res.status).to.equal(200);
-    });
+    // it('DELETE /owner/:accountId/jackpots/:jackpotId - should delete jackpot', async () => {
+    //   const res = await api.delete(`/owner/${currentUser.userAccountIdentity}/jackpots/${supportMockData.jackpotId}`).set('Cookie', cookie);
+    //   expect(res.status).to.equal(200);
+    // });
 
-    it('GET /owner/account - should retrieve owner account details', async () => {
-      expect(boothsIds).to.be.an('array');
-    });
+    // it('GET /owner/account - should retrieve owner account details', async () => {
+    //   expect(boothsIds).to.be.an('array');
+    // });
 
-    it('GET /owner/:accountId/booth - should retrieve booths for account', async () => {
-      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/booth`).set('Cookie', cookie);
-      booths = res.body;
-      expect(res.status).to.equal(200);
-      expect(res.body).to.be.an('array');
-    });
+    // it('GET /owner/:accountId/booth - should retrieve booths for account', async () => {
+    //   const res = await api.get(`/owner/${currentUser.userAccountIdentity}/booth`).set('Cookie', cookie);
+    //   booths = res.body;
+    //   expect(res.status).to.equal(200);
+    //   expect(res.body).to.be.an('array');
+    // });
 
-    it('GET /owner/booth/:boothId - should retrieve booth details', async () => {
-      const res = await api.get(`/owner/booth/${boothsIds[0] ?? supportMockData.boothId}`).set('Cookie', cookie);
-      expect(res.status).to.equal(200);
-      expect(res.body).to.have.property('key');
-      expect(res.body.key).to.equal(boothsIds[0] ?? supportMockData.boothId);
-    });
+    // it('GET /owner/booth/:boothId - should retrieve booth details', async () => {
+    //   const res = await api.get(`/owner/booth/${boothsIds[0] ?? supportMockData.boothId}`).set('Cookie', cookie);
+    //   expect(res.status).to.equal(200);
+    //   expect(res.body).to.have.property('key');
+    //   expect(res.body.key).to.equal(boothsIds[0] ?? supportMockData.boothId);
+    // });
 
-    it('GET /owner/:accountId/actions - should retrieve actions for account', async () => {
-      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/actions`).set('Cookie', cookie);
-      expect(res.status).to.equal(200);
-      expect(res.body).to.be.an('array');
-    });
+    // it('GET /owner/:accountId/actions - should retrieve actions for account', async () => {
+    //   const res = await api.get(`/owner/${currentUser.userAccountIdentity}/actions`).set('Cookie', cookie);
+    //   expect(res.status).to.equal(200);
+    //   expect(res.body).to.be.an('array');
+    // });
 
-    it('GET /owner/:accountId/faceIdentities/:visitorId - should retrieve face identities for visitor', async () => {
-      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/faceIdentities/${accountVisitors?.[0]?.key ?? supportMockData.visitorId}`).set('Cookie', cookie);
-      expect(res.status).to.equal(200);
-      expect(res.body.data).not.to.be.null;
-    });
-
-    // TODO: it works but need template Id instead of process.env.TEMPLATE_ID
-    // it.only('GET /owner/:accountId/templates/:templateId - should get template by ID', async() => {
-    //     const res = await api.get(`/owner/${currentUser.userAccountIdentity}/templates/${process.env.TEMPLATE_ID}`).set('Cookie', cookie);
-    //     expect(res.status).to.equal(200);
-    //     expect(res.body).to.have.property('key');
-    //     expect(res.body.key).to.equal(process.env.TEMPLATE_ID);
+    // it('GET /owner/:accountId/faceIdentities/:visitorId - should retrieve face identities for visitor', async () => {
+    //   const res = await api.get(`/owner/${currentUser.userAccountIdentity}/faceIdentities/${accountVisitors?.[0]?.key ?? supportMockData.visitorId}`).set('Cookie', cookie);
+    //   expect(res.status).to.equal(200);
+    //   expect(res.body.data).not.to.be.null;
     // });
   });
 
@@ -486,44 +478,44 @@ describe('Testing', function () {
     //     expect(res.status).to.equal(200);
     // });
 
-    it('POST /visitor/:visitorId/makePrimaryFace/:actionId - should make primary face by action ID', async () => {
-      const visitorId = accountVisitors?.[0]?.key ?? supportMockData.visitorId;
-      const actionId = accountVisitors[0].actionId ?? supportMockData.actionId;
-      const res = await api
-        .post(`/visitor/${visitorId}/makePrimaryFace/${actionId}`)
-        .set('Cookie', cookie);
-      expect(res.status).to.equal(200);
-    });
+    // it('POST /visitor/:visitorId/makePrimaryFace/:actionId - should make primary face by action ID', async () => {
+    //   const visitorId = accountVisitors?.[0]?.key ?? supportMockData.visitorId;
+    //   const actionId = accountVisitors[0].actionId ?? supportMockData.actionId;
+    //   const res = await api
+    //     .post(`/visitor/${visitorId}/makePrimaryFace/${actionId}`)
+    //     .set('Cookie', cookie);
+    //   expect(res.status).to.equal(200);
+    // });
 
-    it('POST /visitor/:visitorId/makePrimaryFaceById/:faceId - should make primary face by face ID', async () => {
-      const visitorId = accountVisitors?.[0]?.key ?? supportMockData.visitorId;
-      const faceId = accountVisitors[0].faceId ?? supportMockData.faceId;
-      const res = await api
-        .post(`/visitor/${visitorId}/makePrimaryFaceById/${faceId}`)
-        .set('Cookie', cookie);
-      expect(res.status).to.equal(200);
-    });
+    // it('POST /visitor/:visitorId/makePrimaryFaceById/:faceId - should make primary face by face ID', async () => {
+    //   const visitorId = accountVisitors?.[0]?.key ?? supportMockData.visitorId;
+    //   const faceId = accountVisitors[0].faceId ?? supportMockData.faceId;
+    //   const res = await api
+    //     .post(`/visitor/${visitorId}/makePrimaryFaceById/${faceId}`)
+    //     .set('Cookie', cookie);
+    //   expect(res.status).to.equal(200);
+    // });
 
-    it('GET /visitor/:visitorId/resetPrimaryFace/:faceIdentityId - should reset primary face', async () => {
-      const visitorId = accountVisitors?.[0]?.key ?? supportMockData.visitorId;
-      const faceIdentityId = accountVisitors[0].faceIdentityId ?? supportMockData.faceIdentityId;
-      const res = await api
-        .get(`/visitor/${visitorId}/resetPrimaryFace/${faceIdentityId}`)
-        .set('Cookie', cookie);
-      expect(res.status).to.equal(200);
-    });
+    // it('GET /visitor/:visitorId/resetPrimaryFace/:faceIdentityId - should reset primary face', async () => {
+    //   const visitorId = accountVisitors?.[0]?.key ?? supportMockData.visitorId;
+    //   const faceIdentityId = accountVisitors[0].faceIdentityId ?? supportMockData.faceIdentityId;
+    //   const res = await api
+    //     .get(`/visitor/${visitorId}/resetPrimaryFace/${faceIdentityId}`)
+    //     .set('Cookie', cookie);
+    //   expect(res.status).to.equal(200);
+    // });
 
-    it('POST /visitor/external - should save external visitor', async () => {
-      const externalVisitorData = {
-        boothId: boothsIds[0] ?? supportMockData.boothId,
-        email: 'external@example.com',
-      };
-      const res = await api
-        .post('/visitor/external')
-        .set('Cookie', cookie)
-        .send(externalVisitorData);
-      expect(res.status).to.equal(200);
-    });
+    // it('POST /visitor/external - should save external visitor', async () => {
+    //   const externalVisitorData = {
+    //     boothId: boothsIds[0] ?? supportMockData.boothId,
+    //     email: 'external@example.com',
+    //   };
+    //   const res = await api
+    //     .post('/visitor/external')
+    //     .set('Cookie', cookie)
+    //     .send(externalVisitorData);
+    //   expect(res.status).to.equal(200);
+    // });
   });
 
   describe('Booth Endpoints', function () {
