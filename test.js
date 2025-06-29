@@ -12,13 +12,17 @@ let cookie = '';
 let dummyUser = null;
 let currentUser = null;
 let booths = [];
-let boothsIds = null; // TODO: just temp, need to remove
 let accountVisitors = [];
 let recentVideos = [];
-let newTemplate = null;
+
+const responseData = {
+  newTemplate: null,
+  newJackpot: null,
+  boothsIds: null,
+}
 
 // Mock data for now because failed endpoints so we cannot get the data
-let supportMockData = {
+const supportMockData = {
   boothId: '566116a10cf2e5bdafa4d82a',
   visitorId: '56ccea960cf27eecefa065ac',
   // let supportFaceId = '1234567890';
@@ -28,6 +32,7 @@ let supportMockData = {
   accountId: '55792c0d0cf206bed0ceafe4',
   userId: '55792bec0cf206bed0ceafe2',
   videoId: '5acd816448e376945ae9e551',
+  pollId: null, // Will be set when poll is created
 };
 
 (async () => {
@@ -65,7 +70,7 @@ const loginAndGetCookie = async () => {
 
 const getBoothsIds = async () => {
   const res = await api.get('/owner/account').set('Cookie', cookie);
-  boothsIds = res.body.boothsIds ?? [];
+  responseData.boothsIds = res.body.boothsIds ?? [];
 };
 
 const getAccountVisitors = async () => {
@@ -300,7 +305,7 @@ describe('Testing', function () {
 
     it('POST /owner/:accountId/dropbox/upload - should upload file to dropbox', async () => {
     	const res = await api.post(`/owner/${currentUser.userAccountIdentity}/dropbox/upload`).set('Cookie', cookie).send({
-    		boothId: boothsIds[0] ?? supportMockData.boothId,
+    		boothId: responseData.boothsIds[0] ?? supportMockData.boothId,
     		from: 'test',
     		to: new Date().toISOString(),
     	});
@@ -308,7 +313,7 @@ describe('Testing', function () {
     });
 
     it('POST /owner/:accountId/booth/:boothId/listMode - should set list mode', async () => {
-      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/booth/${boothsIds[0] ?? supportMockData.boothId}/listMode?listMode=whiteList`).set('Cookie', cookie);
+      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/booth/${responseData.boothsIds[0] ?? supportMockData.boothId}/listMode?listMode=whiteList`).set('Cookie', cookie);
       expect(res.status).to.equal(200);
     });
 
@@ -318,11 +323,11 @@ describe('Testing', function () {
     });
 
     it('GET /owner/:accountId/booth/:boothId/video - should get recent videos', async () => {
-      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/booth/${boothsIds[0] ?? supportMockData.boothId}/video`).set('Cookie', cookie);
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/booth/${responseData.boothsIds[0] ?? supportMockData.boothId}/video`).set('Cookie', cookie);
       expect(res.status).to.equal(200);
     });
 
-    it.only('POST /owner/:accountId/templates - should create template', async () => {
+    it('POST /owner/:accountId/templates - should create template', async () => {
       const res = await api.post(`/owner/${currentUser.userAccountIdentity}/templates`).set('Cookie', cookie)
         .field('email_body', 'Test Email Body')
         .field('email_subj', 'Test Email Subject')
@@ -330,7 +335,7 @@ describe('Testing', function () {
         .field('email_from', 'test@example.com')
         .field('template_name', 'Test Template')
         .field('sms_text', 'Test SMS Text');
-      newTemplate = res.body.data;
+      responseData.newTemplate = res.body.data;
       expect(res.status).to.equal(200);
     });
 
@@ -339,14 +344,14 @@ describe('Testing', function () {
       expect(res.status).to.equal(200);
     });
 
-    it.only('GET /owner/:accountId/templates/:templateId - should get template by ID', async () => {
-      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/templates/${newTemplate.id}`).set('Cookie', cookie);
-      expect(res.body.data.id).to.equal(newTemplate.id);
+    it('GET /owner/:accountId/templates/:templateId - should get template by ID', async () => {
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/templates/${responseData.newTemplate.id}`).set('Cookie', cookie);
+      expect(res.body.data.id).to.equal(responseData.newTemplate.id);
       expect(res.status).to.equal(200);
     });
 
     it('POST /owner/:accountId/templates/:templateId - should update template', async () => {
-      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/templates/${newTemplate.id}`).set('Cookie', cookie)
+      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/templates/${responseData.newTemplate.id}`).set('Cookie', cookie)
         .field('email_body', 'Test Email Body Updated')
         .field('email_subj', 'Test Email Subject Updated')
         .field('email_to', 'test@example.com Updated')
@@ -357,24 +362,29 @@ describe('Testing', function () {
     });
 
     it('POST /owner/:accountId/templates/:templateId/default - should make template default', async () => {
-      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/templates/${newTemplate.id}/default`).set('Cookie', cookie);
+      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/templates/${responseData.newTemplate.id}/default`).set('Cookie', cookie);
       expect(res.status).to.equal(200);
     });
 
     it('POST /owner/:accountId/templates/:templateId/jackpots - should create jackpot', async () => {
      	const testFileBuffer = Buffer.from('fake video content');
-     	const res = await api.post(`/owner/${currentUser.userAccountIdentity}/templates/${newTemplate.id}/jackpots`).set('Cookie', cookie)
+      const jackPrizes = JSON.stringify([
+        { name: "First Prize", quantity: 1 },
+        { name: "Second Prize", quantity: 5 }
+      ]);
+     	const res = await api.post(`/owner/${currentUser.userAccountIdentity}/templates/${responseData.newTemplate.id}/jackpots`).set('Cookie', cookie)
         .field('send_button_text', 'Send')
         .field('email_subj', 'Test Email Subject Updated')
         .field('email_body', 'Test Email Body Updated')
-        .field('jack_prize', '100')
+        .field('jack_prize', jackPrizes)
         .attach('jackpot_video', testFileBuffer, 'test-video.mp4');
-      console.log('should create jackpot', res.body);
+      responseData.newJackpot = res.body.data;
+      console.log('should create jackpot', responseData.newJackpot);
      	expect(res.status).to.equal(200);
     });
 
     // TODO: blocked by create jackpot endpoint
-    // it.only('POST /owner/:accountId/jackpots/:jackpotId - should update jackpot', async () => {
+    // it('POST /owner/:accountId/jackpots/:jackpotId - should update jackpot', async () => {
     //   const res = await api.post(`/owner/${currentUser.userAccountIdentity}/jackpots/${supportMockData.jackpotId}`)
     //     .set('Cookie', cookie)
     //     .field('send_button_text', 'Send')
@@ -387,69 +397,448 @@ describe('Testing', function () {
     // });
 
     it('GET /owner/:accountId/templates/:templateId/jackpots - should get template jackpots', async () => {
-      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/templates/${newTemplate.id}/jackpots`).set('Cookie', cookie);
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/templates/${responseData.newTemplate.id}/jackpots`).set('Cookie', cookie);
       expect(res.status).to.equal(200);
     });
 
-    // it('GET /owner/:accountId/jackpot - should get account jackpots', async () => {
-    //   const res = await api.get(`/owner/${currentUser.userAccountIdentity}/jackpot`).set('Cookie', cookie);
+    it('GET /owner/:accountId/jackpot - should get account jackpots', async () => {
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/jackpot`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+    });
+
+    it('GET /owner/:accountId/templates/:templateId/jackpots - should get template jackpots', async () => {
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/templates/${responseData.newTemplate.id}/jackpots`).set('Cookie', cookie);
+      console.log('should get template jackpots', res.body);
+      expect(res.status).to.equal(200);
+    });
+
+    it('GET /owner/:accountId/jackpots/:jackpotId - should get jackpot by ID', async () => {
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/jackpots/${responseData.newJackpot.jackpotIdentity}`).set('Cookie', cookie);
+      console.log('should get jackpot by ID', res.body);
+      expect(res.status).to.equal(200);
+    });
+
+    it('DELETE /owner/:accountId/gallery/:templateId/delete - should delete gallery', async () => {
+      const res = await api.delete(`/owner/${currentUser.userAccountIdentity}/gallery/${responseData.newTemplate.id}/delete`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal("success");
+    });
+
+    it('DELETE /owner/:accountId/gallery/:templateId/delete/assets - should delete assets', async () => {
+      const res = await api.delete(`/owner/${currentUser.userAccountIdentity}/gallery/${responseData.newTemplate.id}/delete/assets`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+    });
+
+    it('DELETE /owner/:accountId/templates/:templateId - should delete template', async () => {
+      const res = await api.delete(`/owner/${currentUser.userAccountIdentity}/templates/${responseData.newTemplate.id}`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+    });
+
+    it('DELETE /owner/:accountId/jackpots/:jackpotId - should delete jackpot', async () => {
+      const res = await api.delete(`/owner/${currentUser.userAccountIdentity}/jackpots/${responseData.newJackpot.jackpotIdentity}`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal("success");
+    });
+
+    it('GET /owner/account - should retrieve owner account details', async () => {
+      expect(responseData.boothsIds).to.be.an('array');
+    });
+
+    // NEW from here
+    it('POST /owner/booth/:boothId/update - should update booth', async () => {
+      const res = await api.post(`/owner/booth/${responseData.boothsIds[0] ?? supportMockData.boothId}/update?newEventId=${responseData.boothsIds[0]}&oldEventId=${responseData.boothsIds[0]}`).set('Cookie', cookie);
+      console.log('should update booth', res.body);
+      expect(res.status).to.equal(200);
+    });
+
+    it('GET /owner/:accountId/stat/mail - should get mail status statistics', async () => {
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/stat/mail`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
+    });
+
+    it('PUT /owner/account - should update account details', async () => {
+      const res = await api.put('/owner/account').set('Cookie', cookie).send({
+        name: 'Updated Account Name',
+        contactEmail: 'updated@example.com'
+      });
+      expect(res.status).to.equal(200);
+    });
+
+    it('PUT /owner/:accountId/booth - should update booth for account', async () => {
+      const res = await api.put(`/owner/${currentUser.userAccountIdentity}/booth`).set('Cookie', cookie).send({
+        boothId: responseData.boothsIds[0] ?? supportMockData.boothId,
+        name: 'Updated Booth Name'
+      });
+      expect(res.status).to.equal(200);
+    });
+
+    it('GET /owner/user - should get owner user details', async () => {
+      const res = await api.get('/owner/user').set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+      expect(res.body).to.have.property('identity');
+    });
+
+    it('POST /owner/:accountId/account/logo - should upload account logo', async () => {
+      const testImageBuffer = Buffer.from('fake image content');
+      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/account/logo`).set('Cookie', cookie)
+        .attach('logo', testImageBuffer, 'logo.png');
+      expect(res.status).to.equal(200);
+    });
+
+    it('POST /owner/password - should change owner password', async () => {
+      const res = await api.post('/owner/password').set('Cookie', cookie).send({
+        oldPassword: process.env.PASSWORD,
+        newPassword: 'newPassword123'
+      });
+      expect(res.status).to.equal(200);
+      
+      // Change password back
+      if (res.status === 200) {
+        await api.post('/owner/password').set('Cookie', cookie).send({
+          oldPassword: 'newPassword123',
+          newPassword: process.env.PASSWORD
+        });
+      }
+    });
+
+    it('POST /owner/password/reset - should reset password', async () => {
+      const res = await api.post('/owner/password/reset').set('Cookie', cookie).send({
+        email: process.env.EMAIL
+      });
+      expect(res.status).to.equal(200);
+    });
+
+    it('POST /owner/:accountId/template - should update template images', async () => {
+      const testImageBuffer = Buffer.from('fake template image');
+      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/template`).set('Cookie', cookie)
+        .attach('templateImage', testImageBuffer, 'template.png');
+      expect(res.status).to.equal(200);
+    });
+
+    it('POST /owner/:accountId/visitor/export - should export visitors as CSV', async () => {
+      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/visitor/export`).set('Cookie', cookie).send({
+        boothIds: [responseData.boothsIds[0] ?? supportMockData.boothId],
+        from: '2024-01-01',
+        to: new Date().toISOString()
+      });
+      expect(res.status).to.equal(200);
+    });
+
+    it('POST /owner/:accountId/action/export - should export actions as CSV', async () => {
+      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/action/export`).set('Cookie', cookie).send({
+        boothIds: [responseData.boothsIds[0] ?? supportMockData.boothId],
+        from: '2024-01-01',
+        to: new Date().toISOString()
+      });
+      expect(res.status).to.equal(200);
+    });
+
+    // Only test if user has SUPER_ADMIN role
+    // it('POST /owner/:accountId/send/mail - should send mail to visitors', async () => {
+    //   const res = await api.post(`/owner/${currentUser.userAccountIdentity}/send/mail`).set('Cookie', cookie).send({
+    //     boothIds: [responseData.boothsIds[0] ?? supportMockData.boothId]
+    //   });
     //   expect(res.status).to.equal(200);
     // });
 
-    // it('GET /owner/:accountId/jackpots/:jackpotId - should get jackpot by ID', async () => {
-    //   const res = await api.get(`/owner/${currentUser.userAccountIdentity}/jackpots/${supportMockData.jackpotId}`).set('Cookie', cookie);
-    //   expect(res.status).to.equal(200);
-    // });
+    it('GET /owner/:accountId/template/:key - should get template by key', async () => {
+      if (responseData.newTemplate) {
+        const res = await api.get(`/owner/${currentUser.userAccountIdentity}/template/${responseData.newTemplate.id}`).set('Cookie', cookie);
+        expect(res.status).to.equal(200);
+      }
+    });
 
-    // it('DELETE /owner/:accountId/gallery/:templateId/delete - should delete gallery', async () => {
-    //   const res = await api.delete(`/owner/${currentUser.userAccountIdentity}/gallery/${newTemplate.id}/delete`).set('Cookie', cookie);
-    //   expect(res.status).to.equal(200);
-    // });
+    it('GET /owner/:accountId/visitor - should get visitors (deprecated)', async () => {
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/visitor`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+    });
 
-    // it('DELETE /owner/:accountId/gallery/:templateId/delete/assets - should delete assets', async () => {
-    //   const res = await api.delete(`/owner/${currentUser.userAccountIdentity}/gallery/${newTemplate.id}/delete/assets`).set('Cookie', cookie);
-    //   expect(res.status).to.equal(200);
-    // });
+    it('GET /owner/:accountId/actions - should get actions with pagination', async () => {
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/actions?page=1`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
+    });
 
-    // it('DELETE /owner/:accountId/templates/:templateId - should delete template', async () => {
-    //   const res = await api.delete(`/owner/${currentUser.userAccountIdentity}/templates/${newTemplate.id}`).set('Cookie', cookie);
-    //   expect(res.status).to.equal(200);
-    // });
+    it('GET /owner/:accountId/visitors - should get visitors with pagination', async () => {
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/visitors?page=1`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
+    });
 
-    // it('DELETE /owner/:accountId/jackpots/:jackpotId - should delete jackpot', async () => {
-    //   const res = await api.delete(`/owner/${currentUser.userAccountIdentity}/jackpots/${supportMockData.jackpotId}`).set('Cookie', cookie);
-    //   expect(res.status).to.equal(200);
-    // });
+    it('POST /owner/:accountId/visitors - should get visitors with filter', async () => {
+      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/visitors?page=1`).set('Cookie', cookie).send({
+        boothIds: [responseData.boothsIds[0] ?? supportMockData.boothId]
+      });
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
+    });
 
-    // it('GET /owner/account - should retrieve owner account details', async () => {
-    //   expect(boothsIds).to.be.an('array');
-    // });
+    it('GET /owner/:accountId/visitor/:visitorId/action/:actionId/email/resend - should resend email', async () => {
+      if (accountVisitors.length > 0) {
+        const visitorId = accountVisitors[0].key ?? supportMockData.visitorId;
+        const actionId = supportMockData.actionId;
+        const res = await api.get(`/owner/${currentUser.userAccountIdentity}/visitor/${visitorId}/action/${actionId}/email/resend`).set('Cookie', cookie);
+        expect(res.status).to.equal(200);
+      }
+    });
 
-    // it('GET /owner/:accountId/booth - should retrieve booths for account', async () => {
-    //   const res = await api.get(`/owner/${currentUser.userAccountIdentity}/booth`).set('Cookie', cookie);
-    //   booths = res.body;
-    //   expect(res.status).to.equal(200);
-    //   expect(res.body).to.be.an('array');
-    // });
+    it('GET /owner/:accountId/visitors/:visitorId - should get specific visitor', async () => {
+      const visitorId = accountVisitors?.[0]?.key ?? supportMockData.visitorId;
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/visitors/${visitorId}`).set('Cookie', cookie);
+      expect(res.status).to.be.oneOf([200, 404]); // 404 if visitor not found
+    });
 
-    // it('GET /owner/booth/:boothId - should retrieve booth details', async () => {
-    //   const res = await api.get(`/owner/booth/${boothsIds[0] ?? supportMockData.boothId}`).set('Cookie', cookie);
-    //   expect(res.status).to.equal(200);
-    //   expect(res.body).to.have.property('key');
-    //   expect(res.body.key).to.equal(boothsIds[0] ?? supportMockData.boothId);
-    // });
+    it('GET /owner/:accountId/faceIdentities/:visitorId - should get face identities for visitor', async () => {
+      const visitorId = accountVisitors?.[0]?.key ?? supportMockData.visitorId;
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/faceIdentities/${visitorId}`).set('Cookie', cookie);
+      expect(res.status).to.be.oneOf([200, 404]); // 404 if visitor not found
+    });
 
-    // it('GET /owner/:accountId/actions - should retrieve actions for account', async () => {
-    //   const res = await api.get(`/owner/${currentUser.userAccountIdentity}/actions`).set('Cookie', cookie);
-    //   expect(res.status).to.equal(200);
-    //   expect(res.body).to.be.an('array');
-    // });
+    it('GET /owner/:accountId/visitors/:visitorId/associated - should get visitor actions associated', async () => {
+      const visitorId = accountVisitors?.[0]?.key ?? supportMockData.visitorId;
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/visitors/${visitorId}/associated`).set('Cookie', cookie);
+      expect(res.status).to.be.oneOf([200, 404]); // 404 if visitor not found
+    });
 
-    // it('GET /owner/:accountId/faceIdentities/:visitorId - should retrieve face identities for visitor', async () => {
-    //   const res = await api.get(`/owner/${currentUser.userAccountIdentity}/faceIdentities/${accountVisitors?.[0]?.key ?? supportMockData.visitorId}`).set('Cookie', cookie);
-    //   expect(res.status).to.equal(200);
-    //   expect(res.body.data).not.to.be.null;
-    // });
+    it('POST /owner/:accountId/faceIdentities/:visitorId/associated - should get face identities associated', async () => {
+      const visitorId = accountVisitors?.[0]?.key ?? supportMockData.visitorId;
+      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/faceIdentities/${visitorId}/associated`).set('Cookie', cookie).send([
+        supportMockData.actionId
+      ]);
+      expect(res.status).to.be.oneOf([200, 404]); // 404 if visitor not found
+    });
+
+    it('GET /owner/:accountId/url - should get visitors URL', async () => {
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/url?visitorId=${supportMockData.visitorId}&accountName=testAccount`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+    });
+
+    it('GET /owner/:accountId/visitor/:skip - should get entire visitors with skip', async () => {
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/visitor/0`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+    });
+
+    it('GET /owner/:accountId/booth - should get booths by account key', async () => {
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/booth`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+    });
+
+    it('GET /owner/booth/:key - should get booth by key', async () => {
+      const boothKey = responseData.boothsIds[0] ?? supportMockData.boothId;
+      const res = await api.get(`/owner/booth/${boothKey}`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+    });
+
+    // Statistics endpoints
+    it('GET /owner/:accountId/statistic - should get quick stats', async () => {
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/statistic`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+    });
+
+    it('GET /owner/:accountId/statistic/last/:days - should get last days statistics', async () => {
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/statistic/last/7`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+    });
+
+    it('GET /owner/:accountId/statistic/lifetime - should get lifetime statistics', async () => {
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/statistic/lifetime`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+    });
+
+    it('GET /owner/:accountId/statistic/:boothId - should get booth specific quick stats', async () => {
+      const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/statistic/${boothId}`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+    });
+
+    it('GET /owner/:accountId/statistic/last/:days/:boothId - should get booth specific last days stats', async () => {
+      const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/statistic/last/7/${boothId}`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+    });
+
+    it('GET /owner/:accountId/statistic/lifetime/:boothId - should get booth specific lifetime stats', async () => {
+      const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/statistic/lifetime/${boothId}`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+    });
+
+    it('POST /owner/:accountId/statistic/:dataType/:days/:interval - should get custom statistics', async () => {
+      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/statistic/actions/7/hour`).set('Cookie', cookie).send([
+        responseData.boothsIds[0] ?? supportMockData.boothId
+      ]);
+      expect(res.status).to.equal(200);
+    });
+
+    it('GET /owner/:accountId/peakhour - should get peak hours', async () => {
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/peakhour`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+    });
+
+    it('POST /owner/:accountId/peakhours/:boothId - should get 24 hours activity for booth as graph', async () => {
+      const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
+      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/peakhours/${boothId}`).set('Cookie', cookie).send({
+        from: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        to: new Date().toISOString()
+      });
+      expect(res.status).to.equal(200);
+    });
+
+    it('GET /owner/:accountId/activity/:boothId - should get last 24 hours activity for booth as graph', async () => {
+      const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/activity/${boothId}`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+    });
+
+    it('GET /owner/:accountId/activity - should get last 24 hours activity as graph', async () => {
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/activity`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+    });
+
+    it('POST /owner/:accountId/activity - should get last period activity as graph', async () => {
+      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/activity`).set('Cookie', cookie).send({
+        from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+        to: new Date().toISOString()
+      });
+      expect(res.status).to.equal(200);
+    });
+
+    it('GET /owner/isUpdated/:boothId - should check if template is updated', async () => {
+      const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
+      const res = await api.get(`/owner/isUpdated/${boothId}`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+    });
+
+    // Unity endpoints
+    it('GET /owner/booth/:boothId/unity - should get unity for booth', async () => {
+      const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
+      const res = await api.get(`/owner/booth/${boothId}/unity`).set('Cookie', cookie);
+      expect(res.status).to.be.oneOf([200, 404]); // 404 if no unity found
+    });
+
+    it('POST /owner/booth/:boothId/unity - should create unity for booth', async () => {
+      const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
+      const res = await api.post(`/owner/booth/${boothId}/unity`).set('Cookie', cookie).send([
+        {
+          name: 'Test Unity Asset',
+          url: 'https://example.com/unity-asset.unity3d',
+          version: '1.0.0'
+        }
+      ]);
+      expect(res.status).to.equal(200);
+    });
+
+    it('PUT /owner/booth/:boothId/unity - should update unity for booth', async () => {
+      const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
+      const res = await api.put(`/owner/booth/${boothId}/unity`).set('Cookie', cookie).send([
+        {
+          name: 'Updated Unity Asset',
+          url: 'https://example.com/updated-unity-asset.unity3d',
+          version: '1.1.0'
+        }
+      ]);
+      expect(res.status).to.equal(200);
+    });
+
+    it('DELETE /owner/booth/:boothId/unity - should delete unity for booth', async () => {
+      const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
+      const res = await api.delete(`/owner/booth/${boothId}/unity`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+    });
+
+    // M4V Overlay endpoints
+    it('POST /owner/booth/:boothId/m4voverlaylist - should add M4V overlays', async () => {
+      const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
+      const res = await api.post(`/owner/booth/${boothId}/m4voverlaylist`).set('Cookie', cookie).send([
+        {
+          name: 'Test M4V Overlay',
+          url: 'https://example.com/overlay.m4v'
+        }
+      ]);
+      expect(res.status).to.equal(200);
+    });
+
+    it('PUT /owner/booth/:boothId/m4voverlaylist - should update M4V overlays', async () => {
+      const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
+      const res = await api.put(`/owner/booth/${boothId}/m4voverlaylist`).set('Cookie', cookie).send([
+        {
+          name: 'Updated M4V Overlay',
+          url: 'https://example.com/updated-overlay.m4v'
+        }
+      ]);
+      expect(res.status).to.equal(200);
+    });
+
+    it('DELETE /owner/booth/:boothId/m4voverlaylist - should delete M4V overlays', async () => {
+      const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
+      const res = await api.delete(`/owner/booth/${boothId}/m4voverlaylist`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+    });
+
+    // Poll endpoints
+    it('POST /owner/poll - should create poll', async () => {
+      const res = await api.post('/owner/poll').set('Cookie', cookie).send({
+        question: 'Test Poll Question?',
+        answers: ['Answer 1', 'Answer 2', 'Answer 3'],
+        active: true
+      });
+      expect(res.status).to.equal(200);
+      // Store poll ID for subsequent tests
+      if (res.body.data) {
+        supportMockData.pollId = res.body.data.pollIdentity;
+      }
+    });
+
+    it('PUT /owner/poll/:pollIdentity - should update poll', async () => {
+      if (supportMockData.pollId) {
+        const res = await api.put(`/owner/poll/${supportMockData.pollId}`).set('Cookie', cookie).send({
+          question: 'Updated Poll Question?',
+          answers: ['Updated Answer 1', 'Updated Answer 2'],
+          active: false
+        });
+        expect(res.status).to.equal(200);
+      }
+    });
+
+    it('DELETE /owner/poll/:pollIdentity - should delete poll', async () => {
+      if (supportMockData.pollId) {
+        const res = await api.delete(`/owner/poll/${supportMockData.pollId}`).set('Cookie', cookie);
+        expect(res.status).to.equal(200);
+      }
+    });
+
+    // Push and Email Template endpoints
+    it('GET /owner/:accountId/booth/:boothId/push/v1 - should push pusher event', async () => {
+      const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/booth/${boothId}/push/v1?q=test`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+    });
+
+    it('POST /owner/emailTemplates/send/test - should send test email', async () => {
+      const res = await api.post('/owner/emailTemplates/send/test').set('Cookie', cookie).send({
+        recipientEmail: 'test@example.com',
+        emailTemplate: '<h1>Test Email</h1><p>This is a test email.</p>'
+      });
+      expect(res.status).to.equal(200);
+    });
+
+    it('POST /owner/emailTemplates/:boothId - should create booth email template', async () => {
+      const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
+      const res = await api.post(`/owner/emailTemplates/${boothId}`).set('Cookie', cookie).send({
+        name: 'Test Email Template',
+        subject: 'Test Subject',
+        body: '<h1>Test Template</h1><p>This is a test template.</p>'
+      });
+      expect(res.status).to.equal(200);
+    });
+
+    it('GET /owner/emailTemplates/:boothId - should get booth email templates', async () => {
+      const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
+      const res = await api.get(`/owner/emailTemplates/${boothId}`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+      expect(Array.isArray(res.body)).to.be.true;
+    });
   });
 
   describe('Visitor Endpoints', function () {
@@ -466,7 +855,7 @@ describe('Testing', function () {
     // });
 
     // TODO: task failed but need boothId
-    // it.only('POST /visitor - should create visitor', async() => {
+    // it('POST /visitor - should create visitor', async() => {
     //     const visitorData = {
     //         email: 'visitor@example.com',
     //         boothId: ''
@@ -507,7 +896,7 @@ describe('Testing', function () {
 
     // it('POST /visitor/external - should save external visitor', async () => {
     //   const externalVisitorData = {
-    //     boothId: boothsIds[0] ?? supportMockData.boothId,
+    //     boothId: responseData.boothsIds[0] ?? supportMockData.boothId,
     //     email: 'external@example.com',
     //   };
     //   const res = await api
