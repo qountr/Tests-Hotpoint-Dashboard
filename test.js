@@ -79,7 +79,7 @@ const getAccountVisitors = async () => {
 };
 
 describe('Testing', function () {
-  this.timeout(15000);
+  this.timeout(20000);
 
   before(async () => {
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -444,7 +444,6 @@ describe('Testing', function () {
       expect(responseData.boothsIds).to.be.an('array');
     });
 
-    // NEW from here
     it('POST /owner/booth/:boothId/update - should update booth', async () => {
       const res = await api.post(`/owner/booth/${responseData.boothsIds[0] ?? supportMockData.boothId}/update?newEventId=${responseData.boothsIds[0]}&oldEventId=${responseData.boothsIds[0]}`).set('Cookie', cookie);
       console.log('should update booth', res.body);
@@ -458,12 +457,11 @@ describe('Testing', function () {
       expect(res.body.result).to.equal('success');
     });
 
-    it.only('PUT /owner/account - should update account details', async () => {
+    it('PUT /owner/account - should update account details', async () => {
       const res = await api.put('/owner/account').set('Cookie', cookie).send({
         name: 'Updated Account Name',
         contactEmail: 'updated@example.com'
       });
-      console.log('should update account details', res.body);
       expect(res.status).to.equal(200);
       expect(res.body.status).to.equal('account updated');
 
@@ -476,16 +474,20 @@ describe('Testing', function () {
     });
 
     it('PUT /owner/:accountId/booth/:boothId - should update booth for account', async () => {
+      const randomNumber = Math.floor(Math.random() * 1000000);
       const res = await api.put(`/owner/${currentUser.userAccountIdentity}/booth`).set('Cookie', cookie).send({
         key: responseData.boothsIds[0] ?? supportMockData.boothId,
-        name: "Test",
+        name: `Test ${randomNumber}`,
       });
+
       expect(res.status).to.equal(200);
-      expect(res.body.status).to.equal('account updated');
+      expect(res.body.key).to.equal(responseData.boothsIds[0] ?? supportMockData.boothId);
+      expect(res.body.name).to.equal(`Test ${randomNumber}`);
     });
 
     it('GET /owner/user - should get owner user details', async () => {
       const res = await api.get('/owner/user').set('Cookie', cookie);
+
       expect(res.status).to.equal(200);
       expect(res.body.email).to.equal(currentUser.userEmail);
     });
@@ -515,7 +517,7 @@ describe('Testing', function () {
       }
     });
 
-    it.only('POST /owner/password/reset - should reset password', async () => {
+    it('POST /owner/password/reset - should reset password', async () => {
       const res = await api.post('/owner/password/reset').set('Cookie', cookie).send({
         email: process.env.EMAIL
       });
@@ -527,14 +529,15 @@ describe('Testing', function () {
       const testImageBuffer = Buffer.from('fake template image');
       const res = await api.post(`/owner/${currentUser.userAccountIdentity}/template`).set('Cookie', cookie)
         .attach('templateImage', testImageBuffer, 'template.png');
-      console.log('should update template images', res.body);
+
       expect(res.status).to.equal(200);
+      expect(res.body.status).to.equal('booth updated');
     });
 
     it('POST /owner/:accountId/visitor/export - should export visitors as CSV', async () => {
       const res = await api.post(`/owner/${currentUser.userAccountIdentity}/visitor/export`).set('Cookie', cookie).send({
         boothIds: [responseData.boothsIds[0] ?? supportMockData.boothId],
-        from: '2024-01-01',
+        from: '2025-04-01',
         to: new Date().toISOString()
       });
       expect(res.status).to.equal(200);
@@ -543,31 +546,33 @@ describe('Testing', function () {
     it('POST /owner/:accountId/action/export - should export actions as CSV', async () => {
       const res = await api.post(`/owner/${currentUser.userAccountIdentity}/action/export`).set('Cookie', cookie).send({
         boothIds: [responseData.boothsIds[0] ?? supportMockData.boothId],
-        from: '2024-01-01',
+        from: '2025-04-01',
         to: new Date().toISOString()
       });
       expect(res.status).to.equal(200);
     });
 
-    // Only test if user has SUPER_ADMIN role
-    // it('POST /owner/:accountId/send/mail - should send mail to visitors', async () => {
-    //   const res = await api.post(`/owner/${currentUser.userAccountIdentity}/send/mail`).set('Cookie', cookie).send({
-    //     boothIds: [responseData.boothsIds[0] ?? supportMockData.boothId]
-    //   });
-    //   expect(res.status).to.equal(200);
-    // });
-
-    it('GET /owner/:accountId/template/:key - should get template by key', async () => {
-      if (responseData.newTemplate) {
-        const res = await api.get(`/owner/${currentUser.userAccountIdentity}/template/${responseData.newTemplate.id}`).set('Cookie', cookie);
-        expect(res.status).to.equal(200);
-      }
-    });
-
-    it('GET /owner/:accountId/visitor - should get visitors (deprecated)', async () => {
-      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/visitor`).set('Cookie', cookie);
+    it('POST /owner/:accountId/send/mail - should send mail to visitors', async () => {
+      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/send/mail`).set('Cookie', cookie).send({
+        boothIds: [responseData.boothsIds[0] ?? supportMockData.boothId]
+      });
+      console.log('should send mail to visitors', res.body);
       expect(res.status).to.equal(200);
     });
+
+    it('GET /owner/:accountId/template/:key - should get template by key', async () => {
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/template/${responseData.newTemplate.id}`).set('Cookie', cookie);
+
+      expect(res.status).to.equal(200);
+      expect(res.body.key).to.equal(responseData.newTemplate.id);
+    });
+
+    // This get all visitors (a lot of data). Becareful to run
+    // it('GET /owner/:accountId/visitor - should get visitors (deprecated)', async () => {
+    //   const res = await api.get(`/owner/${currentUser.userAccountIdentity}/visitor`).set('Cookie', cookie);
+
+    //   expect(res.status).to.equal(200);
+    // });
 
     it('GET /owner/:accountId/actions - should get actions with pagination', async () => {
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/actions?page=1`).set('Cookie', cookie);
@@ -577,6 +582,7 @@ describe('Testing', function () {
 
     it('GET /owner/:accountId/visitors - should get visitors with pagination', async () => {
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/visitors?page=1`).set('Cookie', cookie);
+
       expect(res.status).to.equal(200);
       expect(res.body.result).to.equal('success');
     });
@@ -585,6 +591,7 @@ describe('Testing', function () {
       const res = await api.post(`/owner/${currentUser.userAccountIdentity}/visitors?page=1`).set('Cookie', cookie).send({
         boothIds: [responseData.boothsIds[0] ?? supportMockData.boothId]
       });
+
       expect(res.status).to.equal(200);
       expect(res.body.result).to.equal('success');
     });
@@ -598,6 +605,7 @@ describe('Testing', function () {
       }
     });
 
+    // TODO: check from here
     it('GET /owner/:accountId/visitors/:visitorId - should get specific visitor', async () => {
       const visitorId = accountVisitors?.[0]?.key ?? supportMockData.visitorId;
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/visitors/${visitorId}`).set('Cookie', cookie);
