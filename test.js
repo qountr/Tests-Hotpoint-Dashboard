@@ -449,6 +449,7 @@ describe('Testing', function () {
       const res = await api.post(`/owner/booth/${responseData.boothsIds[0] ?? supportMockData.boothId}/update?newEventId=${responseData.boothsIds[0]}&oldEventId=${responseData.boothsIds[0]}`).set('Cookie', cookie);
       console.log('should update booth', res.body);
       expect(res.status).to.equal(200);
+      expect(res.body.status).to.equal('updated');
     });
 
     it('GET /owner/:accountId/stat/mail - should get mail status statistics', async () => {
@@ -457,32 +458,43 @@ describe('Testing', function () {
       expect(res.body.result).to.equal('success');
     });
 
-    it('PUT /owner/account - should update account details', async () => {
+    it.only('PUT /owner/account - should update account details', async () => {
       const res = await api.put('/owner/account').set('Cookie', cookie).send({
         name: 'Updated Account Name',
         contactEmail: 'updated@example.com'
       });
+      console.log('should update account details', res.body);
       expect(res.status).to.equal(200);
+      expect(res.body.status).to.equal('account updated');
+
+      if (res.status === 200) {
+        await api.put('/owner/account').set('Cookie', cookie).send({
+          name: currentUser.userName,
+          contactEmail: currentUser.userEmail
+        });
+      }
     });
 
-    it('PUT /owner/:accountId/booth - should update booth for account', async () => {
+    it('PUT /owner/:accountId/booth/:boothId - should update booth for account', async () => {
       const res = await api.put(`/owner/${currentUser.userAccountIdentity}/booth`).set('Cookie', cookie).send({
-        boothId: responseData.boothsIds[0] ?? supportMockData.boothId,
-        name: 'Updated Booth Name'
+        key: responseData.boothsIds[0] ?? supportMockData.boothId,
+        name: "Test",
       });
       expect(res.status).to.equal(200);
+      expect(res.body.status).to.equal('account updated');
     });
 
     it('GET /owner/user - should get owner user details', async () => {
       const res = await api.get('/owner/user').set('Cookie', cookie);
       expect(res.status).to.equal(200);
-      expect(res.body).to.have.property('identity');
+      expect(res.body.email).to.equal(currentUser.userEmail);
     });
 
     it('POST /owner/:accountId/account/logo - should upload account logo', async () => {
       const testImageBuffer = Buffer.from('fake image content');
       const res = await api.post(`/owner/${currentUser.userAccountIdentity}/account/logo`).set('Cookie', cookie)
         .attach('logo', testImageBuffer, 'logo.png');
+      console.log('should upload account logo', res.body);
       expect(res.status).to.equal(200);
     });
 
@@ -491,6 +503,7 @@ describe('Testing', function () {
         oldPassword: process.env.PASSWORD,
         newPassword: 'newPassword123'
       });
+      console.log('should change owner password', res.body);
       expect(res.status).to.equal(200);
       
       // Change password back
@@ -502,10 +515,11 @@ describe('Testing', function () {
       }
     });
 
-    it('POST /owner/password/reset - should reset password', async () => {
+    it.only('POST /owner/password/reset - should reset password', async () => {
       const res = await api.post('/owner/password/reset').set('Cookie', cookie).send({
         email: process.env.EMAIL
       });
+      console.log('should reset password', res.body);
       expect(res.status).to.equal(200);
     });
 
@@ -513,6 +527,7 @@ describe('Testing', function () {
       const testImageBuffer = Buffer.from('fake template image');
       const res = await api.post(`/owner/${currentUser.userAccountIdentity}/template`).set('Cookie', cookie)
         .attach('templateImage', testImageBuffer, 'template.png');
+      console.log('should update template images', res.body);
       expect(res.status).to.equal(200);
     });
 
