@@ -312,12 +312,12 @@ describe('Testing', function () {
     // });
 
     it('POST /owner/:accountId/dropbox/upload - should upload file to dropbox', async () => {
-    	const res = await api.post(`/owner/${currentUser.userAccountIdentity}/dropbox/upload`).set('Cookie', cookie).send({
-    		boothId: responseData.boothsIds[0] ?? supportMockData.boothId,
-    		from: 'test',
-    		to: new Date().toISOString(),
-    	});
-    	expect(res.status).to.equal(200);
+      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/dropbox/upload`).set('Cookie', cookie).send({
+        boothId: responseData.boothsIds[0] ?? supportMockData.boothId,
+        from: 'test',
+        to: new Date().toISOString(),
+      });
+      expect(res.status).to.equal(200);
     });
 
     it('POST /owner/:accountId/booth/:boothId/listMode - should set list mode', async () => {
@@ -375,12 +375,12 @@ describe('Testing', function () {
     });
 
     it('POST /owner/:accountId/templates/:templateId/jackpots - should create jackpot', async () => {
-     	const testFileBuffer = Buffer.from('fake video content');
+      const testFileBuffer = Buffer.from('fake video content');
       const jackPrizes = JSON.stringify([
         { name: "First Prize", quantity: 1 },
         { name: "Second Prize", quantity: 5 }
       ]);
-     	const res = await api.post(`/owner/${currentUser.userAccountIdentity}/templates/${responseData.newTemplate.id}/jackpots`).set('Cookie', cookie)
+      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/templates/${responseData.newTemplate.id}/jackpots`).set('Cookie', cookie)
         .field('send_button_text', 'Send')
         .field('email_subj', 'Test Email Subject Updated')
         .field('email_body', 'Test Email Body Updated')
@@ -388,7 +388,7 @@ describe('Testing', function () {
         .attach('jackpot_video', testFileBuffer, 'test-video.mp4');
       responseData.newJackpot = res.body.data;
       console.log('should create jackpot', responseData.newJackpot);
-     	expect(res.status).to.equal(200);
+      expect(res.status).to.equal(200);
     });
 
     // TODO: blocked by create jackpot endpoint
@@ -515,7 +515,7 @@ describe('Testing', function () {
       });
       console.log('should change owner password', res.body);
       expect(res.status).to.equal(200);
-      
+
       // Change password back
       if (res.status === 200) {
         await api.post('/owner/password').set('Cookie', cookie).send({
@@ -878,7 +878,7 @@ describe('Testing', function () {
     it('DELETE /owner/booth/:boothId/m4voverlaylist - should delete M4V overlays', async () => {
       const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
       const res = await api.delete(`/owner/booth/${boothId}/m4voverlaylist`).set('Cookie', cookie);
-      
+
       expect(res.status).to.equal(200);
       expect(res.body.result).to.equal('success');
     });
@@ -908,7 +908,7 @@ describe('Testing', function () {
 
       expect(res.status).to.equal(200);
       expect(res.body.result).to.equal('success');
-      
+
       // Store poll ID for subsequent tests
       if (res.body.data) {
         supportMockData.pollId = res.body.data.pollIdentity;
@@ -986,14 +986,14 @@ describe('Testing', function () {
         end: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(), // 3 hours from now
         schedule: 'NONE'
       };
-      
+
       const res = await api.post(`/owner/${currentUser.userAccountIdentity}/schedule/events`)
         .set('Cookie', cookie)
         .send(boothEventPayload);
-      
+
       expect(res.status).to.equal(200);
       expect(res.body.result).to.equal('success');
-      
+
       // Store event ID for subsequent tests
       if (res.body.data) {
         supportMockData.eventId = res.body.data.boothEventIdentity;
@@ -1004,7 +1004,7 @@ describe('Testing', function () {
       if (supportMockData.eventId) {
         const res = await api.get(`/owner/${currentUser.userAccountIdentity}/schedule/events/${supportMockData.eventId}`)
           .set('Cookie', cookie);
-        
+
         expect(res.status).to.equal(200);
         expect(res.body.result).to.be.oneOf(['success', 'not found']);
       }
@@ -1013,7 +1013,7 @@ describe('Testing', function () {
     it('GET /owner/:accountId/schedule/booths/:boothIdentity/events - should get booth events', async () => {
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/schedule/booths/${responseData.boothsIds[0] ?? supportMockData.boothId}/events`)
         .set('Cookie', cookie);
-      
+
       expect(res.status).to.equal(200);
       expect(res.body.result).to.be.oneOf(['success', 'not found any', 'invalid booth identity']);
     });
@@ -1022,11 +1022,11 @@ describe('Testing', function () {
       const boothIdsPayload = {
         boothIds: [responseData.boothsIds[0] ?? supportMockData.boothId]
       };
-      
+
       const res = await api.post(`/owner/${currentUser.userAccountIdentity}/schedule/booths/events`)
         .set('Cookie', cookie)
         .send(boothIdsPayload);
-      
+
       expect(res.status).to.equal(200);
       expect(res.body.result).to.be.oneOf(['success', 'not found any']);
     });
@@ -1035,7 +1035,7 @@ describe('Testing', function () {
       if (supportMockData.eventId) {
         const res = await api.delete(`/owner/${currentUser.userAccountIdentity}/schedule/events/${supportMockData.eventId}`)
           .set('Cookie', cookie);
-        
+
         expect(res.status).to.equal(200);
         expect(res.body.result).to.equal('success');
       }
@@ -1045,7 +1045,7 @@ describe('Testing', function () {
   describe('Venue Endpoints', function () {
     it('GET /venue/stats/:days - should get top booths by interval', async () => {
       const res = await api.get('/venue/stats/7').set('Cookie', cookie);
-      
+
       expect(res.status).to.equal(200);
       expect(res.body.result).to.equal('success');
     });
@@ -1053,9 +1053,9 @@ describe('Testing', function () {
     it('GET /venue/stats/:timestampStart/:timestampEnd - should get underperformed booths by interval', async () => {
       const timestampStart = Date.now() - 7 * 24 * 60 * 60 * 1000; // 7 days ago
       const timestampEnd = Date.now();
-      
+
       const res = await api.get(`/venue/stats/${timestampStart}/${timestampEnd}`).set('Cookie', cookie);
-      
+
       expect(res.status).to.equal(200);
       expect(res.body.result).to.equal('success');
     });
@@ -1073,11 +1073,11 @@ describe('Testing', function () {
           password: 'testPassword123'
         }
       };
-      
+
       const res = await api.post('/venue/setup/new')
         .set('Cookie', cookie)
         .send(venuePayload);
-      
+
       expect(res.status).to.equal(200);
       expect(res.body.result).to.equal('success');
     });
@@ -1085,7 +1085,7 @@ describe('Testing', function () {
     it('GET /venue/account/:boothId - should get associated accounts', async () => {
       const res = await api.get(`/venue/account/${responseData.boothsIds[0] ?? supportMockData.boothId}`)
         .set('Cookie', cookie);
-      
+
       expect(res.status).to.equal(200);
       expect(res.body.result).to.equal('success');
     });
@@ -1095,24 +1095,24 @@ describe('Testing', function () {
       const boothPayload = {
         boothName: `Venue Test Booth ${randomNumber}`
       };
-      
+
       const res = await api.post(`/venue/${currentUser.userAccountIdentity}/booth/`)
         .set('Cookie', cookie)
         .send(boothPayload);
-      
+
       expect(res.status).to.be.oneOf([200, 201]);
       expect(res.body.result).to.equal('success');
     });
 
     it('POST /venue/:accountId/booth/:boothId - should update booth', async () => {
       const randomNumber = Math.floor(Math.random() * 1000000);
-      
+
       const res = await api.post(`/venue/${currentUser.userAccountIdentity}/booth/${responseData.boothsIds[0] ?? supportMockData.boothId}`)
-          .set('Cookie', cookie)
-          .field('key', responseData.boothsIds[0] ?? supportMockData.boothId)
-          .field('name', `Updated Venue Booth ${randomNumber}`)
-          .field('description', 'Updated booth description');
-      
+        .set('Cookie', cookie)
+        .field('key', responseData.boothsIds[0] ?? supportMockData.boothId)
+        .field('name', `Updated Venue Booth ${randomNumber}`)
+        .field('description', 'Updated booth description');
+
       expect(res.status).to.be.oneOf([200, 400, 404]);
       expect(res.body.result).to.equal('success');
       expect(res.body.data.name).to.equal(`Updated Venue Booth ${randomNumber}`);
@@ -1127,11 +1127,11 @@ describe('Testing', function () {
         city: 'New York',
         category: 'Entertainment'
       };
-      
+
       const res = await api.post(`/venue/${currentUser.userAccountIdentity}/booth/${responseData.boothsIds[0] ?? supportMockData.boothId}/location`)
         .set('Cookie', cookie)
         .send(locationPayload);
-      
+
       expect(res.status).to.be.oneOf([200, 400, 404]);
       expect(res.body.result).to.equal('success');
     });
@@ -1140,11 +1140,11 @@ describe('Testing', function () {
       const apiTokenPayload = {
         apiToken: 'test-api-token-123'
       };
-      
+
       const res = await api.post(`/venue/${currentUser.userAccountIdentity}/booth/${responseData.boothsIds[0] ?? supportMockData.boothId}/api-token`)
         .set('Cookie', cookie)
         .send(apiTokenPayload);
-      
+
       expect(res.status).to.equal(200);
       expect(res.body.result).to.equal('success');
     });
@@ -1153,11 +1153,11 @@ describe('Testing', function () {
       const customTermsPayload = {
         customTerms: 'These are custom terms and conditions for the booth.'
       };
-      
+
       const res = await api.put(`/venue/booth/${responseData.boothsIds[0] ?? supportMockData.boothId}/customterms`)
         .set('Cookie', cookie)
         .send(customTermsPayload);
-      
+
       expect(res.status).to.equal(200);
       expect(res.body.result).to.equal('success');
     });
@@ -1165,7 +1165,7 @@ describe('Testing', function () {
     it('GET /venue/:accountId/booth/:boothId - should get booth by identity', async () => {
       const res = await api.get(`/venue/${currentUser.userAccountIdentity}/booth/${responseData.boothsIds[0] ?? supportMockData.boothId}`)
         .set('Cookie', cookie);
-      
+
       expect(res.status).to.equal(200);
       expect(res.body.result).to.equal('success');
       expect(res.body.data.key).to.equal(responseData.boothsIds[0] ?? supportMockData.boothId);
@@ -1174,7 +1174,7 @@ describe('Testing', function () {
     it('GET /venue/:accountId - should get account with owner', async () => {
       const res = await api.get(`/venue/${currentUser.userAccountIdentity}`)
         .set('Cookie', cookie);
-      
+
       expect(res.status).to.equal(200);
       expect(res.body.result).to.equal('success');
     });
@@ -1184,11 +1184,11 @@ describe('Testing', function () {
         accountName: 'Updated Account Name',
         ownerEmail: currentUser.userEmail
       };
-      
+
       const res = await api.post(`/venue/${currentUser.userAccountIdentity}`)
         .set('Cookie', cookie)
         .send(updateAccountPayload);
-      
+
       expect(res.status).to.equal(200);
       expect(res.body.result).to.equal('success');
       expect(res.body.data?.account?.identity).to.equal(currentUser.userAccountIdentity);
@@ -1197,7 +1197,7 @@ describe('Testing', function () {
     it('GET /venue/:accountId/booth/:boothId/push/v1 - should push pusher event', async () => {
       const res = await api.get(`/venue/${currentUser.userAccountIdentity}/booth/${responseData.boothsIds[0] ?? supportMockData.boothId}/push/v1?q=updateBooth`)
         .set('Cookie', cookie);
-      
+
       expect(res.status).to.equal(200);
       expect(res.body.result).to.be.oneOf(['success', 'failed']);
 
@@ -1208,7 +1208,7 @@ describe('Testing', function () {
 
     it('GET /venue - should return health check', async () => {
       const res = await api.get('/venue').set('Cookie', cookie);
-      
+
       expect(res.status).to.equal(200);
     });
 
@@ -1217,17 +1217,17 @@ describe('Testing', function () {
       const boothPayload = {
         boothName: 'Test Booth To Archive'
       };
-      
+
       const createRes = await api.post(`/venue/${currentUser.userAccountIdentity}/booth/`)
         .set('Cookie', cookie)
         .send(boothPayload);
-      
+
       if (createRes.status === 200 || createRes.status === 201) {
         const boothId = createRes.body.data?.key;
         if (boothId) {
           const res = await api.delete(`/venue/${currentUser.userAccountIdentity}/booth/${boothId}`)
             .set('Cookie', cookie);
-          
+
           expect(res.status).to.equal(200);
           expect(res.body.result).to.equal('success');
         }
@@ -1236,7 +1236,7 @@ describe('Testing', function () {
 
     it('GET /venue/test/test - should return test response', async () => {
       const res = await api.get('/venue/test/test').set('Cookie', cookie);
-      
+
       expect(res.status).to.equal(200);
     });
   });
@@ -1401,7 +1401,7 @@ describe('Testing', function () {
   });
 
   describe('Public Endpoints', function () {
-    it.only('GET /public/stats - should get public statistics', async () => {
+    it('GET /public/stats - should get public statistics', async () => {
       const res = await api.get('/public/stats');
 
       console.log('should get public statistics', res.body);
