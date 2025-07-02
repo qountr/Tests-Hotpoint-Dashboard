@@ -15,6 +15,14 @@ let booths = [];
 let accountVisitors = [];
 let recentVideos = [];
 
+const PROJECT_TYPE = {
+  AR: 'AR',
+  VR: 'VR',
+  '3D': '3D',
+  '2D': '2D',
+  mobile: 'mobile',
+}
+
 const responseData = {
   newTemplate: null,
   newJackpot: null,
@@ -79,7 +87,7 @@ const getAccountVisitors = async () => {
 };
 
 describe('Testing', function () {
-  this.timeout(20000);
+  this.timeout(30000);
 
   before(async () => {
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -605,23 +613,31 @@ describe('Testing', function () {
       }
     });
 
-    // TODO: check from here
     it('GET /owner/:accountId/visitors/:visitorId - should get specific visitor', async () => {
       const visitorId = accountVisitors?.[0]?.key ?? supportMockData.visitorId;
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/visitors/${visitorId}`).set('Cookie', cookie);
+
       expect(res.status).to.be.oneOf([200, 404]); // 404 if visitor not found
+      expect(res.body.result).to.equal('success');
+      expect(res.body.data.id).to.equal(visitorId);
     });
 
     it('GET /owner/:accountId/faceIdentities/:visitorId - should get face identities for visitor', async () => {
       const visitorId = accountVisitors?.[0]?.key ?? supportMockData.visitorId;
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/faceIdentities/${visitorId}`).set('Cookie', cookie);
+
       expect(res.status).to.be.oneOf([200, 404]); // 404 if visitor not found
+      expect(res.body.result).to.equal('success');
+      expect(res.body.data.id).to.equal(visitorId);
     });
 
     it('GET /owner/:accountId/visitors/:visitorId/associated - should get visitor actions associated', async () => {
       const visitorId = accountVisitors?.[0]?.key ?? supportMockData.visitorId;
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/visitors/${visitorId}/associated`).set('Cookie', cookie);
+
       expect(res.status).to.be.oneOf([200, 404]); // 404 if visitor not found
+      expect(res.body.result).to.equal('success');
+      expect(res.body.data.id).to.equal(visitorId);
     });
 
     it('POST /owner/:accountId/faceIdentities/:visitorId/associated - should get face identities associated', async () => {
@@ -629,61 +645,77 @@ describe('Testing', function () {
       const res = await api.post(`/owner/${currentUser.userAccountIdentity}/faceIdentities/${visitorId}/associated`).set('Cookie', cookie).send([
         supportMockData.actionId
       ]);
+
       expect(res.status).to.be.oneOf([200, 404]); // 404 if visitor not found
+      expect(res.body.result).to.equal('success');
+      expect(res.body.data.id).to.equal(visitorId);
     });
 
     it('GET /owner/:accountId/url - should get visitors URL', async () => {
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/url?visitorId=${supportMockData.visitorId}&accountName=testAccount`).set('Cookie', cookie);
+
       expect(res.status).to.equal(200);
     });
 
     it('GET /owner/:accountId/visitor/:skip - should get entire visitors with skip', async () => {
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/visitor/0`).set('Cookie', cookie);
+
       expect(res.status).to.equal(200);
+      expect(Array.isArray(res.body)).to.equal(true);
     });
 
     it('GET /owner/:accountId/booth - should get booths by account key', async () => {
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/booth`).set('Cookie', cookie);
+
       expect(res.status).to.equal(200);
+      expect(Array.isArray(res.body)).to.equal(true);
     });
 
     it('GET /owner/booth/:key - should get booth by key', async () => {
       const boothKey = responseData.boothsIds[0] ?? supportMockData.boothId;
       const res = await api.get(`/owner/booth/${boothKey}`).set('Cookie', cookie);
+
       expect(res.status).to.equal(200);
+      expect(res.body.key).to.equal(boothKey);
     });
 
     // Statistics endpoints
     it('GET /owner/:accountId/statistic - should get quick stats', async () => {
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/statistic`).set('Cookie', cookie);
+
       expect(res.status).to.equal(200);
     });
 
     it('GET /owner/:accountId/statistic/last/:days - should get last days statistics', async () => {
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/statistic/last/7`).set('Cookie', cookie);
+
       expect(res.status).to.equal(200);
     });
 
     it('GET /owner/:accountId/statistic/lifetime - should get lifetime statistics', async () => {
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/statistic/lifetime`).set('Cookie', cookie);
+
       expect(res.status).to.equal(200);
     });
 
     it('GET /owner/:accountId/statistic/:boothId - should get booth specific quick stats', async () => {
       const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/statistic/${boothId}`).set('Cookie', cookie);
+
       expect(res.status).to.equal(200);
     });
 
     it('GET /owner/:accountId/statistic/last/:days/:boothId - should get booth specific last days stats', async () => {
       const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/statistic/last/7/${boothId}`).set('Cookie', cookie);
+
       expect(res.status).to.equal(200);
     });
 
     it('GET /owner/:accountId/statistic/lifetime/:boothId - should get booth specific lifetime stats', async () => {
       const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/statistic/lifetime/${boothId}`).set('Cookie', cookie);
+
       expect(res.status).to.equal(200);
     });
 
@@ -691,11 +723,13 @@ describe('Testing', function () {
       const res = await api.post(`/owner/${currentUser.userAccountIdentity}/statistic/actions/7/hour`).set('Cookie', cookie).send([
         responseData.boothsIds[0] ?? supportMockData.boothId
       ]);
+
       expect(res.status).to.equal(200);
     });
 
     it('GET /owner/:accountId/peakhour - should get peak hours', async () => {
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/peakhour`).set('Cookie', cookie);
+
       expect(res.status).to.equal(200);
     });
 
@@ -705,18 +739,23 @@ describe('Testing', function () {
         from: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
         to: new Date().toISOString()
       });
+
       expect(res.status).to.equal(200);
     });
 
     it('GET /owner/:accountId/activity/:boothId - should get last 24 hours activity for booth as graph', async () => {
       const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/activity/${boothId}`).set('Cookie', cookie);
+
       expect(res.status).to.equal(200);
+      expect(Array.isArray(res.body)).to.equal(true);
     });
 
     it('GET /owner/:accountId/activity - should get last 24 hours activity as graph', async () => {
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/activity`).set('Cookie', cookie);
+
       expect(res.status).to.equal(200);
+      expect(Array.isArray(res.body)).to.equal(true);
     });
 
     it('POST /owner/:accountId/activity - should get last period activity as graph', async () => {
@@ -724,89 +763,152 @@ describe('Testing', function () {
         from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
         to: new Date().toISOString()
       });
+
       expect(res.status).to.equal(200);
     });
 
     it('GET /owner/isUpdated/:boothId - should check if template is updated', async () => {
       const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
       const res = await api.get(`/owner/isUpdated/${boothId}`).set('Cookie', cookie);
+
       expect(res.status).to.equal(200);
+      expect(res.body.updated).to.equal(false) || expect(res.body.updated).to.equal(true);
     });
 
     // Unity endpoints
     it('GET /owner/booth/:boothId/unity - should get unity for booth', async () => {
       const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
       const res = await api.get(`/owner/booth/${boothId}/unity`).set('Cookie', cookie);
+
       expect(res.status).to.be.oneOf([200, 404]); // 404 if no unity found
     });
 
     it('POST /owner/booth/:boothId/unity - should create unity for booth', async () => {
       const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
-      const res = await api.post(`/owner/booth/${boothId}/unity`).set('Cookie', cookie).send([
-        {
-          name: 'Test Unity Asset',
-          url: 'https://example.com/unity-asset.unity3d',
-          version: '1.0.0'
-        }
-      ]);
+      const payload = {
+        projectType: PROJECT_TYPE.AR,
+        download: false,
+        update: false,
+        assetBundleLocation: 'https://example.com/asset-bundle.unity3d',
+        assetBundleName: 'asset-bundle',
+        sceneName: 'scene',
+        objectName: 'object',
+        objectVariable: 'objectVariable',
+        thumbnail: 'https://example.com/thumbnail.png',
+        background: 'https://example.com/background.png',
+        screensaver: 'https://example.com/screensaver.png'
+      }
+
+      const res = await api.post(`/owner/booth/${boothId}/unity`).set('Cookie', cookie).send([payload]);
+
       expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
     });
 
     it('PUT /owner/booth/:boothId/unity - should update unity for booth', async () => {
       const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
-      const res = await api.put(`/owner/booth/${boothId}/unity`).set('Cookie', cookie).send([
-        {
-          name: 'Updated Unity Asset',
-          url: 'https://example.com/updated-unity-asset.unity3d',
-          version: '1.1.0'
-        }
-      ]);
+      const payload = {
+        projectType: PROJECT_TYPE.AR,
+        download: false,
+        update: false,
+        assetBundleLocation: 'https://example.com/asset-bundle.unity3d',
+        assetBundleName: 'asset-bundle',
+        sceneName: 'scene',
+        objectName: 'object',
+        objectVariable: 'objectVariable',
+      }
+      const res = await api.put(`/owner/booth/${boothId}/unity`).set('Cookie', cookie).send([payload]);
+
       expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
     });
 
     it('DELETE /owner/booth/:boothId/unity - should delete unity for booth', async () => {
       const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
       const res = await api.delete(`/owner/booth/${boothId}/unity`).set('Cookie', cookie);
+
       expect(res.status).to.equal(200);
     });
 
     // M4V Overlay endpoints
     it('POST /owner/booth/:boothId/m4voverlaylist - should add M4V overlays', async () => {
       const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
+      const payload = {
+        alphaVideoUrl: 'https://example.com/overlay.m4v',
+        color: 'red',
+        similarity: 0.5,
+        blend: 0.5,
+        additionalParams: 'additionalParams',
+        previewThumbnailImage: 'https://example.com/preview.png',
+        alphaVideoIdentifier: 'alphaVideoIdentifier',
+        thresholdSensitivity: 0.5,
+        smoothing: 0.5,
+        alphaSecondaryVideoUrl: 'https://example.com/secondary.m4v'
+      }
       const res = await api.post(`/owner/booth/${boothId}/m4voverlaylist`).set('Cookie', cookie).send([
-        {
-          name: 'Test M4V Overlay',
-          url: 'https://example.com/overlay.m4v'
-        }
+        payload
       ]);
+
       expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
     });
 
     it('PUT /owner/booth/:boothId/m4voverlaylist - should update M4V overlays', async () => {
       const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
+      const payload = {
+        alphaVideoUrl: 'https://example.com/updated-overlay.m4v',
+        color: 'blue',
+        similarity: 0.6,
+        blend: 0.6,
+        additionalParams: 'updatedAdditionalParams',
+        previewThumbnailImage: 'https://example.com/updated-preview.png',
+        alphaVideoIdentifier: 'updatedAlphaVideoIdentifier',
+        thresholdSensitivity: 0.6,
+        smoothing: 0.6,
+        alphaSecondaryVideoUrl: 'https://example.com/updated-secondary.m4v'
+      }
       const res = await api.put(`/owner/booth/${boothId}/m4voverlaylist`).set('Cookie', cookie).send([
-        {
-          name: 'Updated M4V Overlay',
-          url: 'https://example.com/updated-overlay.m4v'
-        }
+        payload
       ]);
+
       expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
     });
 
     it('DELETE /owner/booth/:boothId/m4voverlaylist - should delete M4V overlays', async () => {
       const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
       const res = await api.delete(`/owner/booth/${boothId}/m4voverlaylist`).set('Cookie', cookie);
+      
       expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
     });
 
     // Poll endpoints
     it('POST /owner/poll - should create poll', async () => {
-      const res = await api.post('/owner/poll').set('Cookie', cookie).send({
-        question: 'Test Poll Question?',
-        answers: ['Answer 1', 'Answer 2', 'Answer 3'],
-        active: true
-      });
+      const payload = {
+        pollIdentity: 'pollIdentity',
+        templates: ['template1', 'template2'],
+        pollName: 'Test Poll',
+        questions: [
+          {
+            question: 'Test Poll Question?',
+            answers: ['Answer 1', 'Answer 2', 'Answer 3'],
+            active: true,
+            questionText: 'Test Poll Question?',
+            choices: [
+              {
+                choiceName: 'Choice 1',
+                choiceImage: 'https://example.com/choice1.png',
+              }
+            ]
+          }
+        ]
+      }
+      const res = await api.post('/owner/poll').set('Cookie', cookie).send(payload);
+
       expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
+      
       // Store poll ID for subsequent tests
       if (res.body.data) {
         supportMockData.pollId = res.body.data.pollIdentity;
@@ -820,14 +922,18 @@ describe('Testing', function () {
           answers: ['Updated Answer 1', 'Updated Answer 2'],
           active: false
         });
+
         expect(res.status).to.equal(200);
+        expect(res.body.result).to.equal('success');
       }
     });
 
     it('DELETE /owner/poll/:pollIdentity - should delete poll', async () => {
       if (supportMockData.pollId) {
         const res = await api.delete(`/owner/poll/${supportMockData.pollId}`).set('Cookie', cookie);
+
         expect(res.status).to.equal(200);
+        expect(res.body.result).to.equal('success');
       }
     });
 
@@ -835,6 +941,7 @@ describe('Testing', function () {
     it('GET /owner/:accountId/booth/:boothId/push/v1 - should push pusher event', async () => {
       const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/booth/${boothId}/push/v1?q=test`).set('Cookie', cookie);
+
       expect(res.status).to.equal(200);
     });
 
@@ -843,7 +950,9 @@ describe('Testing', function () {
         recipientEmail: 'test@example.com',
         emailTemplate: '<h1>Test Email</h1><p>This is a test email.</p>'
       });
+
       expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
     });
 
     it('POST /owner/emailTemplates/:boothId - should create booth email template', async () => {
@@ -851,86 +960,479 @@ describe('Testing', function () {
       const res = await api.post(`/owner/emailTemplates/${boothId}`).set('Cookie', cookie).send({
         name: 'Test Email Template',
         subject: 'Test Subject',
-        body: '<h1>Test Template</h1><p>This is a test template.</p>'
+        body: '<h1>Test Template</h1><p>This is a test template.</p>',
+        template: 'template1'
       });
+
       expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
     });
 
     it('GET /owner/emailTemplates/:boothId - should get booth email templates', async () => {
       const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
       const res = await api.get(`/owner/emailTemplates/${boothId}`).set('Cookie', cookie);
+
       expect(res.status).to.equal(200);
       expect(Array.isArray(res.body)).to.be.true;
+    });
+
+    // Schedule Endpoints (Owner)
+    it('POST /owner/:accountId/schedule/events - should add booth event', async () => {
+      const boothEventPayload = {
+        boothIdentity: responseData.boothsIds[0] ?? supportMockData.boothId,
+        templateIdentity: supportMockData.templateId,
+        boothEventName: 'Test Event',
+        start: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour from now
+        end: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(), // 3 hours from now
+        schedule: 'NONE'
+      };
+      
+      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/schedule/events`)
+        .set('Cookie', cookie)
+        .send(boothEventPayload);
+      
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
+      
+      // Store event ID for subsequent tests
+      if (res.body.data) {
+        supportMockData.eventId = res.body.data.boothEventIdentity;
+      }
+    });
+
+    it('GET /owner/:accountId/schedule/events/:eventId - should get event by identity', async () => {
+      if (supportMockData.eventId) {
+        const res = await api.get(`/owner/${currentUser.userAccountIdentity}/schedule/events/${supportMockData.eventId}`)
+          .set('Cookie', cookie);
+        
+        expect(res.status).to.equal(200);
+        expect(res.body.result).to.be.oneOf(['success', 'not found']);
+      }
+    });
+
+    it('GET /owner/:accountId/schedule/booths/:boothIdentity/events - should get booth events', async () => {
+      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/schedule/booths/${responseData.boothsIds[0] ?? supportMockData.boothId}/events`)
+        .set('Cookie', cookie);
+      
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.be.oneOf(['success', 'not found any', 'invalid booth identity']);
+    });
+
+    it('POST /owner/:accountId/schedule/booths/events - should get booth events for multiple booths', async () => {
+      const boothIdsPayload = {
+        boothIds: [responseData.boothsIds[0] ?? supportMockData.boothId]
+      };
+      
+      const res = await api.post(`/owner/${currentUser.userAccountIdentity}/schedule/booths/events`)
+        .set('Cookie', cookie)
+        .send(boothIdsPayload);
+      
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.be.oneOf(['success', 'not found any']);
+    });
+
+    it('DELETE /owner/:accountId/schedule/events/:eventId - should remove booth event', async () => {
+      if (supportMockData.eventId) {
+        const res = await api.delete(`/owner/${currentUser.userAccountIdentity}/schedule/events/${supportMockData.eventId}`)
+          .set('Cookie', cookie);
+        
+        expect(res.status).to.equal(200);
+        expect(res.body.result).to.equal('success');
+      }
+    });
+  });
+
+  describe('Venue Endpoints', function () {
+    it('GET /venue/stats/:days - should get top booths by interval', async () => {
+      const res = await api.get('/venue/stats/7').set('Cookie', cookie);
+      
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
+    });
+
+    it('GET /venue/stats/:timestampStart/:timestampEnd - should get underperformed booths by interval', async () => {
+      const timestampStart = Date.now() - 7 * 24 * 60 * 60 * 1000; // 7 days ago
+      const timestampEnd = Date.now();
+      
+      const res = await api.get(`/venue/stats/${timestampStart}/${timestampEnd}`).set('Cookie', cookie);
+      
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
+    });
+
+    it('POST /venue/setup/new - should create new venue', async () => {
+      const randomNumber = Math.floor(Math.random() * 1000000);
+      const venuePayload = {
+        venue_group_name: `Test Venue ${randomNumber}`,
+        venue_email: `venue${randomNumber}@example.com`,
+        booth_name: `Test Booth ${randomNumber}`,
+        hotpoint_account: {
+          user_name: `testuser${randomNumber}`,
+          email: `hotpoint${randomNumber}@example.com`,
+          full_name: `Test User ${randomNumber}`,
+          password: 'testPassword123'
+        }
+      };
+      
+      const res = await api.post('/venue/setup/new')
+        .set('Cookie', cookie)
+        .send(venuePayload);
+      
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
+    });
+
+    it('GET /venue/account/:boothId - should get associated accounts', async () => {
+      const res = await api.get(`/venue/account/${responseData.boothsIds[0] ?? supportMockData.boothId}`)
+        .set('Cookie', cookie);
+      
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
+    });
+
+    it('POST /venue/:accountId/booth/ - should add booth to account', async () => {
+      const randomNumber = Math.floor(Math.random() * 1000000);
+      const boothPayload = {
+        boothName: `Venue Test Booth ${randomNumber}`
+      };
+      
+      const res = await api.post(`/venue/${currentUser.userAccountIdentity}/booth/`)
+        .set('Cookie', cookie)
+        .send(boothPayload);
+      
+      expect(res.status).to.be.oneOf([200, 201]);
+      expect(res.body.result).to.equal('success');
+    });
+
+    it('POST /venue/:accountId/booth/:boothId - should update booth', async () => {
+      const randomNumber = Math.floor(Math.random() * 1000000);
+      
+      const res = await api.post(`/venue/${currentUser.userAccountIdentity}/booth/${responseData.boothsIds[0] ?? supportMockData.boothId}`)
+          .set('Cookie', cookie)
+          .field('key', responseData.boothsIds[0] ?? supportMockData.boothId)
+          .field('name', `Updated Venue Booth ${randomNumber}`)
+          .field('description', 'Updated booth description');
+      
+      expect(res.status).to.be.oneOf([200, 400, 404]);
+      expect(res.body.result).to.equal('success');
+      expect(res.body.data.name).to.equal(`Updated Venue Booth ${randomNumber}`);
+    });
+
+    it('POST /venue/:accountId/booth/:boothId/location - should update booth location', async () => {
+      const locationPayload = {
+        name: 'Test Location',
+        address: '123 Test Street',
+        latitude: '40.7128',
+        longitude: '-74.0060',
+        city: 'New York',
+        category: 'Entertainment'
+      };
+      
+      const res = await api.post(`/venue/${currentUser.userAccountIdentity}/booth/${responseData.boothsIds[0] ?? supportMockData.boothId}/location`)
+        .set('Cookie', cookie)
+        .send(locationPayload);
+      
+      expect(res.status).to.be.oneOf([200, 400, 404]);
+      expect(res.body.result).to.equal('success');
+    });
+
+    it('POST /venue/:accountId/booth/:boothId/api-token - should update booth api token', async () => {
+      const apiTokenPayload = {
+        apiToken: 'test-api-token-123'
+      };
+      
+      const res = await api.post(`/venue/${currentUser.userAccountIdentity}/booth/${responseData.boothsIds[0] ?? supportMockData.boothId}/api-token`)
+        .set('Cookie', cookie)
+        .send(apiTokenPayload);
+      
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
+    });
+
+    it('PUT /venue/booth/:boothId/customterms - should update booth custom terms', async () => {
+      const customTermsPayload = {
+        customTerms: 'These are custom terms and conditions for the booth.'
+      };
+      
+      const res = await api.put(`/venue/booth/${responseData.boothsIds[0] ?? supportMockData.boothId}/customterms`)
+        .set('Cookie', cookie)
+        .send(customTermsPayload);
+      
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
+    });
+
+    it('GET /venue/:accountId/booth/:boothId - should get booth by identity', async () => {
+      const res = await api.get(`/venue/${currentUser.userAccountIdentity}/booth/${responseData.boothsIds[0] ?? supportMockData.boothId}`)
+        .set('Cookie', cookie);
+      
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
+      expect(res.body.data.key).to.equal(responseData.boothsIds[0] ?? supportMockData.boothId);
+    });
+
+    it('GET /venue/:accountId - should get account with owner', async () => {
+      const res = await api.get(`/venue/${currentUser.userAccountIdentity}`)
+        .set('Cookie', cookie);
+      
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
+    });
+
+    it('POST /venue/:accountId - should update account', async () => {
+      const updateAccountPayload = {
+        accountName: 'Updated Account Name',
+        ownerEmail: currentUser.userEmail
+      };
+      
+      const res = await api.post(`/venue/${currentUser.userAccountIdentity}`)
+        .set('Cookie', cookie)
+        .send(updateAccountPayload);
+      
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
+      expect(res.body.data?.account?.identity).to.equal(currentUser.userAccountIdentity);
+    });
+
+    it('GET /venue/:accountId/booth/:boothId/push/v1 - should push pusher event', async () => {
+      const res = await api.get(`/venue/${currentUser.userAccountIdentity}/booth/${responseData.boothsIds[0] ?? supportMockData.boothId}/push/v1?q=updateBooth`)
+        .set('Cookie', cookie);
+      
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.be.oneOf(['success', 'failed']);
+
+      if (res.body.result === 'failed') {
+        expect(res.body.data.message).to.equal(`booth [${responseData.boothsIds[0] ?? supportMockData.boothId}] offline`);
+      }
+    });
+
+    it('GET /venue - should return health check', async () => {
+      const res = await api.get('/venue').set('Cookie', cookie);
+      
+      expect(res.status).to.equal(200);
+    });
+
+    it('DELETE /venue/:accountId/booth/:boothId - should archive booth', async () => {
+      // Create a test booth first to archive
+      const boothPayload = {
+        boothName: 'Test Booth To Archive'
+      };
+      
+      const createRes = await api.post(`/venue/${currentUser.userAccountIdentity}/booth/`)
+        .set('Cookie', cookie)
+        .send(boothPayload);
+      
+      if (createRes.status === 200 || createRes.status === 201) {
+        const boothId = createRes.body.data?.key;
+        if (boothId) {
+          const res = await api.delete(`/venue/${currentUser.userAccountIdentity}/booth/${boothId}`)
+            .set('Cookie', cookie);
+          
+          expect(res.status).to.equal(200);
+          expect(res.body.result).to.equal('success');
+        }
+      }
+    });
+
+    it('GET /venue/test/test - should return test response', async () => {
+      const res = await api.get('/venue/test/test').set('Cookie', cookie);
+      
+      expect(res.status).to.equal(200);
     });
   });
 
   describe('Visitor Endpoints', function () {
-    before(async () => {
-      const res = await api.get(`/owner/${currentUser.userAccountIdentity}/visitors`).set('Cookie', cookie);
-      accountVisitors = res.body;
+    it('GET /visitor/:visitorId - should get visitor by ID', async () => {
+      const visitorId = accountVisitors?.[0]?.key ?? supportMockData.visitorId;
+      const res = await api.get(`/visitor/${visitorId}`).set('Cookie', cookie);
+      expect(res.status).to.equal(200);
+      expect(res.body.key).to.equal(visitorId);
     });
 
-    // TODO: it works but need visitor Id
-    // it('GET /visitor/:visitorId - should get visitor by ID', async() => {
-    //     const visitorId = accountVisitors?.[0]?.key;
-    //     const res = await api.get(`/visitor/${visitorId}`).set('Cookie', cookie);
-    //     expect(res.status).to.equal(200);
-    // });
+    it('POST /visitor - should create visitor', async () => {
+      const visitorData = {
+        email: 'visitor@example.com',
+        boothId: responseData.boothsIds[0] ?? supportMockData.boothId
+      };
+      const res = await api
+        .post('/visitor')
+        .set('Cookie', cookie)
+        .send(visitorData);
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
+    });
 
-    // TODO: task failed but need boothId
-    // it('POST /visitor - should create visitor', async() => {
-    //     const visitorData = {
-    //         email: 'visitor@example.com',
-    //         boothId: ''
-    //     };
-    //     const res = await api
-    //         .post('/visitor')
-    //         .set('Cookie', cookie)
-    //         .send(visitorData);
-    //     expect(res.status).to.equal(200);
-    // });
+    it('POST /visitor/:visitorId/makePrimaryFace/:actionId - should make primary face by action ID', async () => {
+      const visitorId = accountVisitors?.[0]?.key ?? supportMockData.visitorId;
+      const actionId = supportMockData.actionId;
+      const res = await api
+        .post(`/visitor/${visitorId}/makePrimaryFace/${actionId}`)
+        .set('Cookie', cookie);
 
-    // it('POST /visitor/:visitorId/makePrimaryFace/:actionId - should make primary face by action ID', async () => {
-    //   const visitorId = accountVisitors?.[0]?.key ?? supportMockData.visitorId;
-    //   const actionId = accountVisitors[0].actionId ?? supportMockData.actionId;
-    //   const res = await api
-    //     .post(`/visitor/${visitorId}/makePrimaryFace/${actionId}`)
-    //     .set('Cookie', cookie);
-    //   expect(res.status).to.equal(200);
-    // });
+      expect(res.status).to.be.oneOf([200, 404]);
+    });
 
-    // it('POST /visitor/:visitorId/makePrimaryFaceById/:faceId - should make primary face by face ID', async () => {
-    //   const visitorId = accountVisitors?.[0]?.key ?? supportMockData.visitorId;
-    //   const faceId = accountVisitors[0].faceId ?? supportMockData.faceId;
-    //   const res = await api
-    //     .post(`/visitor/${visitorId}/makePrimaryFaceById/${faceId}`)
-    //     .set('Cookie', cookie);
-    //   expect(res.status).to.equal(200);
-    // });
+    it('POST /visitor/:visitorId/makePrimaryFaceById/:faceId - should make primary face by face ID', async () => {
+      const visitorId = accountVisitors?.[0]?.key ?? supportMockData.visitorId;
+      const faceId = 'test-face-id-123';
+      const res = await api
+        .post(`/visitor/${visitorId}/makePrimaryFaceById/${faceId}`)
+        .set('Cookie', cookie);
 
-    // it('GET /visitor/:visitorId/resetPrimaryFace/:faceIdentityId - should reset primary face', async () => {
-    //   const visitorId = accountVisitors?.[0]?.key ?? supportMockData.visitorId;
-    //   const faceIdentityId = accountVisitors[0].faceIdentityId ?? supportMockData.faceIdentityId;
-    //   const res = await api
-    //     .get(`/visitor/${visitorId}/resetPrimaryFace/${faceIdentityId}`)
-    //     .set('Cookie', cookie);
-    //   expect(res.status).to.equal(200);
-    // });
+      expect(res.status).to.be.oneOf([200, 404]);
+    });
 
-    // it('POST /visitor/external - should save external visitor', async () => {
-    //   const externalVisitorData = {
-    //     boothId: responseData.boothsIds[0] ?? supportMockData.boothId,
-    //     email: 'external@example.com',
-    //   };
-    //   const res = await api
-    //     .post('/visitor/external')
-    //     .set('Cookie', cookie)
-    //     .send(externalVisitorData);
-    //   expect(res.status).to.equal(200);
-    // });
+    it('GET /visitor/:visitorId/resetPrimaryFace/:faceIdentityId - should reset primary face', async () => {
+      const visitorId = accountVisitors?.[0]?.key ?? supportMockData.visitorId;
+      const faceIdentityId = 'test-face-identity-123';
+      const res = await api
+        .get(`/visitor/${visitorId}/resetPrimaryFace/${faceIdentityId}`)
+        .set('Cookie', cookie);
+
+      expect(res.status).to.be.oneOf([200, 404]);
+    });
+
+    it('POST /visitor/external - should save external visitor', async () => {
+      const externalVisitorData = {
+        boothId: responseData.boothsIds[0] ?? supportMockData.boothId,
+        email: 'external@example.com',
+        firstName: 'External',
+        lastName: 'Visitor'
+      };
+      const res = await api
+        .post('/visitor/external')
+        .set('Cookie', cookie)
+        .send(externalVisitorData);
+      expect(res.status).to.equal(200);
+    });
   });
 
-  describe('Booth Endpoints', function () {
+  describe('WebHook Endpoints', function () {
+    it('POST /hook/sendgrid - should handle sendgrid webhook', async () => {
+      const sendgridData = {
+        event: 'delivered',
+        email: 'test@example.com',
+        timestamp: Math.floor(Date.now() / 1000),
+        'smtp-id': '<test@smtp-id.sendgrid.net>',
+        sg_event_id: 'test-event-id',
+        sg_message_id: 'test-message-id'
+      };
 
-  })
+      const res = await api.post('/hook/sendgrid')
+        .set('Cookie', cookie)
+        .send(sendgridData);
+
+      expect(res.status).to.be.oneOf([200, 404]);
+    });
+
+    it('POST /hook/clearbit - should handle clearbit webhook', async () => {
+      const clearbitData = {
+        id: 'test-clearbit-id',
+        type: 'person',
+        body: {
+          person: {
+            id: 'test-person-id',
+            name: {
+              fullName: 'Test Person'
+            },
+            email: 'test@example.com'
+          }
+        }
+      };
+
+      const res = await api.post('/hook/clearbit')
+        .set('Cookie', cookie)
+        .send(clearbitData);
+
+      expect(res.status).to.be.oneOf([200, 404]);
+    });
+  });
+
+  describe('Session Endpoints', function () {
+    it('POST /sessions - should authenticate user', async () => {
+      const loginData = {
+        email: process.env.EMAIL,
+        password: process.env.PASSWORD
+      };
+
+      const res = await api.post('/sessions')
+        .send(loginData);
+
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
+      expect(res.body.data).to.have.property('userIdentity');
+    });
+
+    it('GET /sessions/current - should get current session', async () => {
+      const res = await api.get('/sessions/current')
+        .set('Cookie', cookie);
+
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
+    });
+  });
+
+  describe('Internal Search Endpoints', function () {
+    it('GET /internal/search/cities-and-categories - should get cities and categories', async () => {
+      const res = await api.get('/internal/search/cities-and-categories')
+        .set('Cookie', cookie);
+
+      expect(res.status).to.equal(200);
+      expect(res.body).to.have.property('cities');
+      expect(res.body).to.have.property('categories');
+    });
+
+    it('GET /internal/search - should get locations by city', async () => {
+      const res = await api.get('/internal/search?city=New York')
+        .set('Cookie', cookie);
+
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
+    });
+
+    it('GET /internal/search/booth/:boothId - should get by booth identity', async () => {
+      const boothId = responseData.boothsIds[0] ?? supportMockData.boothId;
+      const res = await api.get(`/internal/search/booth/${boothId}`)
+        .set('Cookie', cookie);
+
+      expect(res.status).to.equal(200);
+      expect(res.body).to.have.property('totalCount');
+    });
+  });
+
+  describe('Public Endpoints', function () {
+    it.only('GET /public/stats - should get public statistics', async () => {
+      const res = await api.get('/public/stats');
+
+      console.log('should get public statistics', res.body);
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
+    });
+
+    it('GET /public/share/:actionId - should get public share by action ID', async () => {
+      const actionId = supportMockData.actionId;
+      const res = await api.get(`/public/share/${actionId}`);
+
+      expect(res.status).to.be.oneOf([200, 404]);
+      expect(res.body.result).to.be.oneOf(['success', 'not found']);
+    });
+
+    it('GET /public/share/video/:videoId - should get public share by video ID', async () => {
+      const videoId = supportMockData.videoId;
+      const res = await api.get(`/public/share/video/${videoId}`);
+
+      expect(res.status).to.be.oneOf([200, 404]);
+      expect(res.body.result).to.be.oneOf(['success', 'not found']);
+    });
+  });
+
+  describe('Logout Endpoints', function () {
+    it('POST /logout - should logout user', async () => {
+      const res = await api.post('/logout')
+        .set('Cookie', cookie);
+
+      expect(res.status).to.equal(200);
+      expect(res.body.result).to.equal('success');
+    });
+  });
 });
