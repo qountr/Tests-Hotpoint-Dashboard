@@ -3,7 +3,8 @@
     "version": "1.0.0",
     "main": "index.js",
     "scripts": {
-        "test": "mocha"
+        "test": "mocha",
+        "test:oldapp": "mocha --no-config old-app.js"
     },
     "keywords": [],
     "author": "",

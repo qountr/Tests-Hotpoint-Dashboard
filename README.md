@@ -29,6 +29,9 @@ To run all tests:
 
 ```bash
 npm test
+
+# for Old app (old-app-with-docker branch)
+npm test:oldapp
 ```
 
 ## Notes

@@ -1,6 +1,6 @@
 /*
-    This test uses # Digital Ocean - replica Database
-    with support@hotpointapp.com account.
+    This test uses # Mongo5Testing DB with old-app-with-docker branch
+    with support@hotpointapp.com account (please use this account since it's admin)
 */
 
 const { describe, it, before } = require('mocha');
@@ -40,7 +40,7 @@ const supportMockData = {
   templateId: '566116a10cf2e5bdafa4d829',
   accountId: '55792c0d0cf206bed0ceafe4',
   userId: '55792bec0cf206bed0ceafe2',
-  videoId: '5acd816448e376945ae9e551',
+  videoId: '104468',
   pollId: null, // Will be set when poll is created
 };
 
@@ -321,6 +321,7 @@ describe('Testing', function () {
         from: 'test',
         to: new Date().toISOString(),
       });
+      console.log('should upload file to dropbox', res.body);
       expect(res.status).to.equal(200);
     });
 
@@ -375,6 +376,7 @@ describe('Testing', function () {
 
     it('POST /owner/:accountId/templates/:templateId/default - should make template default', async () => {
       const res = await api.post(`/owner/${currentUser.userAccountIdentity}/templates/${responseData.newTemplate.id}/default`).set('Cookie', cookie);
+      console.log('should make template default', res.body);
       expect(res.status).to.equal(200);
     });
 
@@ -432,12 +434,14 @@ describe('Testing', function () {
 
     it('DELETE /owner/:accountId/gallery/:templateId/delete - should delete gallery', async () => {
       const res = await api.delete(`/owner/${currentUser.userAccountIdentity}/gallery/${responseData.newTemplate.id}/delete`).set('Cookie', cookie);
+      console.log('should delete gallery', res.body);
       expect(res.status).to.equal(200);
       expect(res.body.result).to.equal("success");
     });
 
     it('DELETE /owner/:accountId/gallery/:templateId/delete/assets - should delete assets', async () => {
       const res = await api.delete(`/owner/${currentUser.userAccountIdentity}/gallery/${responseData.newTemplate.id}/delete/assets`).set('Cookie', cookie);
+      console.log('should delete assets', res.body);
       expect(res.status).to.equal(200);
     });
 
@@ -448,6 +452,7 @@ describe('Testing', function () {
 
     it('DELETE /owner/:accountId/jackpots/:jackpotId - should delete jackpot', async () => {
       const res = await api.delete(`/owner/${currentUser.userAccountIdentity}/jackpots/${responseData.newJackpot.jackpotIdentity}`).set('Cookie', cookie);
+      console.log('should delete jackpot', res.body);
       expect(res.status).to.equal(200);
       expect(res.body.result).to.equal("success");
     });
@@ -526,9 +531,11 @@ describe('Testing', function () {
           oldPassword: 'newPassword123',
           newPassword: process.env.PASSWORD
         });
+        console.log('should change password back', res.body, process.env.PASSWORD);
       }
     });
 
+    // Only run this when you want to reset password, the password will be reset
     it.skip('POST /owner/password/reset - should reset password', async () => {
       const res = await api.post('/owner/password/reset').set('Cookie', cookie).send({
         email: process.env.EMAIL
@@ -727,13 +734,13 @@ describe('Testing', function () {
       const res = await api.post(`/owner/${currentUser.userAccountIdentity}/statistic/actions/7/hour`).set('Cookie', cookie).send([
         responseData.boothsIds[0] ?? supportMockData.boothId
       ]);
-
+      console.log('should get custom statistics', res.body);
       expect(res.status).to.equal(200);
     });
 
     it('GET /owner/:accountId/peakhour - should get peak hours', async () => {
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/peakhour`).set('Cookie', cookie);
-
+      console.log('should get peak hours', res.body);
       expect(res.status).to.equal(200);
     });
 
@@ -743,7 +750,7 @@ describe('Testing', function () {
         from: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
         to: new Date().toISOString()
       });
-
+      console.log('should get 24 hours activity for booth as graph', res.body);
       expect(res.status).to.equal(200);
     });
 
@@ -757,9 +764,9 @@ describe('Testing', function () {
 
     it('GET /owner/:accountId/activity - should get last 24 hours activity as graph', async () => {
       const res = await api.get(`/owner/${currentUser.userAccountIdentity}/activity`).set('Cookie', cookie);
-
+      console.log('should get last 24 hours activity for booth as graph', res.body);
       expect(res.status).to.equal(200);
-      expect(Array.isArray(res.body)).to.equal(true);
+      expect(Array.isArray(res.body.results)).to.equal(true);
     });
 
     it('POST /owner/:accountId/activity - should get last period activity as graph', async () => {
