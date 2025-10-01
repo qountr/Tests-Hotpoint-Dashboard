@@ -1117,7 +1117,7 @@ describe('Testing', function () {
         .field('name', `Updated Venue Booth ${randomNumber}`)
         .field('description', 'Updated booth description');
 
-      expect(res.status).to.be.oneOf([200, 400, 404]);
+      expect(res.status).to.be.oneOf([200]);
       expect(res.body.result).to.equal('success');
       expect(res.body.data.name).to.equal(`Updated Venue Booth ${randomNumber}`);
     });
@@ -1136,7 +1136,7 @@ describe('Testing', function () {
         .set('Cookie', cookie)
         .send(locationPayload);
 
-      expect(res.status).to.be.oneOf([200, 400, 404]);
+      expect(res.status).to.be.oneOf([200]);
       expect(res.body.result).to.equal('success');
     });
 
